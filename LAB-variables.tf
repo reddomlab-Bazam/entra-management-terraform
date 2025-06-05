@@ -175,5 +175,5 @@ variable "common_tags" {
 variable "allowed_ip_address" {
   description = "Your public IP address for secure access"
   type        = string
-  default     = "84.70.131.207/32"  # Replace with your actual IP
+  default     = "84.70.131.207"  # Replace with your actual IP
 }
