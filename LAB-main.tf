@@ -31,41 +31,35 @@ resource "azurerm_storage_share" "attribute_management" {
   quota                = 50
 }
 
-# Storage Share Directories
+# Storage Share Directories - UPDATED to fix deprecation warnings
 resource "azurerm_storage_share_directory" "config" {
-  name                 = "config"
-  share_name           = azurerm_storage_share.attribute_management.name
-  storage_account_name = azurerm_storage_account.main.name
+  name             = "config"
+  storage_share_id = azurerm_storage_share.attribute_management.id
 }
 
 resource "azurerm_storage_share_directory" "logs" {
-  name                 = "logs"
-  share_name           = azurerm_storage_share.attribute_management.name
-  storage_account_name = azurerm_storage_account.main.name
+  name             = "logs"
+  storage_share_id = azurerm_storage_share.attribute_management.id
 }
 
 resource "azurerm_storage_share_directory" "reports" {
-  name                 = "reports"
-  share_name           = azurerm_storage_share.attribute_management.name
-  storage_account_name = azurerm_storage_account.main.name
+  name             = "reports"
+  storage_share_id = azurerm_storage_share.attribute_management.id
 }
 
 resource "azurerm_storage_share_directory" "backups" {
-  name                 = "backups"
-  share_name           = azurerm_storage_share.attribute_management.name
-  storage_account_name = azurerm_storage_account.main.name
+  name             = "backups"
+  storage_share_id = azurerm_storage_share.attribute_management.id
 }
 
 resource "azurerm_storage_share_directory" "scripts" {
-  name                 = "scripts"
-  share_name           = azurerm_storage_share.attribute_management.name
-  storage_account_name = azurerm_storage_account.main.name
+  name             = "scripts"
+  storage_share_id = azurerm_storage_share.attribute_management.id
 }
 
 resource "azurerm_storage_share_directory" "templates" {
-  name                 = "templates"
-  share_name           = azurerm_storage_share.attribute_management.name
-  storage_account_name = azurerm_storage_account.main.name
+  name             = "templates"
+  storage_share_id = azurerm_storage_share.attribute_management.id
 }
 
 # Storage Container for web files
