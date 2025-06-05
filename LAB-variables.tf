@@ -171,3 +171,9 @@ variable "common_tags" {
     CreatedBy   = "Terraform"
   }
 }
+
+variable "allowed_ip_address" {
+  description = "Your public IP address for secure access"
+  type        = string
+  default     = "84.70.131.207/32"  # Replace with your actual IP
+}

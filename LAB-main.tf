@@ -267,13 +267,28 @@ resource "azurerm_linux_web_app" "main" {
   service_plan_id     = azurerm_service_plan.main.id
   https_only          = true
 
-  site_config {
-    always_on = false
-    
-    application_stack {
-      node_version = "18-lts"
-    }
+site_config {
+  always_on = false
+  
+  application_stack {
+    node_version = "18-lts"
   }
+  
+  # Security: Block all except your IP
+  ip_restriction {
+    action     = "Allow"
+    ip_address = "${var.allowed_ip_address}/32"
+    priority   = 100
+    name       = "AllowMyIP"
+  }
+  
+  ip_restriction {
+    action     = "Deny"
+    ip_address = "0.0.0.0/0"
+    priority   = 200
+    name       = "DenyEverythingElse"
+  }
+}
 
   app_settings = {
     "AUTOMATION_ACCOUNT_NAME"               = azurerm_automation_account.main.name
