@@ -156,19 +156,12 @@ variable "to_email" {
   default     = "admin@lab.local"
 }
 
-# Application Insights Variables
 variable "application_insights_type" {
   description = "Application type for Application Insights"
   type        = string
   default     = "web"
-  
-  validation {
-    condition     = contains(["web", "ios", "other", "store", "java", "phone"], var.application_insights_type)
-    error_message = "Application Insights type must be one of: web, ios, other, store, java, phone."
-  }
 }
 
-# Resource Tags
 variable "common_tags" {
   description = "Common tags to apply to all resources"
   type        = map(string)
@@ -176,7 +169,5 @@ variable "common_tags" {
     Environment = "Lab"
     Purpose     = "Entra Extension Attribute Management"
     CreatedBy   = "Terraform"
-    Project     = "EntraManagement"
-    Owner       = "lab-admin"
   }
 }

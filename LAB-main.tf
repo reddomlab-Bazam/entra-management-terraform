@@ -218,17 +218,26 @@ resource "azurerm_automation_variable_string" "key_vault" {
   description             = "Key vault name"
 }
 
-# Application Insights
+# Application Insights - Fixed with workspace_id
 resource "azurerm_application_insights" "main" {
   name                = "${var.web_app_name}-insights"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
-  application_type    = "web"
+  application_type    = var.application_insights_type
+  workspace_id        = azurerm_log_analytics_workspace.main.id
   
-  tags = {
-    Environment = "Lab"
-    Purpose     = "Web Interface Monitoring"
-  }
+  tags = var.common_tags
+}
+
+# Log Analytics Workspace (required for Application Insights)
+resource "azurerm_log_analytics_workspace" "main" {
+  name                = "${var.web_app_name}-logs"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+
+  tags = var.common_tags
 }
 
 # App Service Plan - Fixed to prevent replacement
