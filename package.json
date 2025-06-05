@@ -1,0 +1,17 @@
+{
+  "name": "entra-management-deploy",
+  "version": "1.0.0",
+  "description": "Entra Management Console - Deployment Wrapper",
+  "scripts": {
+    "start": "cd webapp && npm start",
+    "build": "cd webapp && npm install --production",
+    "postinstall": "cd webapp && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
