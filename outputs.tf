@@ -1,6 +1,6 @@
 output "resource_group_name" {
   description = "Name of the resource group"
-  value       = data.azurerm_resource_group.main.name
+  value       = azurerm_resource_group.main.name  # Fixed to use created resource group
 }
 
 output "storage_account_name" {
@@ -54,6 +54,26 @@ output "runbook_name" {
   value       = azurerm_automation_runbook.extension_attribute_management.name
 }
 
+output "web_app_name" {
+  description = "Name of the web application"
+  value       = azurerm_linux_web_app.main.name
+}
+
+output "web_app_url" {
+  description = "URL of the web application"
+  value       = "https://${azurerm_linux_web_app.main.default_hostname}"
+}
+
+output "key_vault_name" {
+  description = "Name of the Key Vault"
+  value       = azurerm_key_vault.main.name
+}
+
+output "key_vault_uri" {
+  description = "URI of the Key Vault"
+  value       = azurerm_key_vault.main.vault_uri
+}
+
 output "html_interface_path" {
   description = "Path to the HTML interface in the file share"
   value       = "\\\\${azurerm_storage_account.main.name}.file.core.windows.net\\${azurerm_storage_share.attribute_management.name}\\config\\attribute-management.html"
@@ -73,26 +93,31 @@ output "file_share_access_commands" {
 output "azure_ad_application" {
   description = "Azure AD application details for Graph API access"
   value = {
-    application_id = azuread_application.extension_attribute_app.application_id
-    object_id      = azuread_application.extension_attribute_app.object_id
-    display_name   = azuread_application.extension_attribute_app.display_name
+    client_id    = azuread_application.extension_attribute_app.client_id  # Fixed deprecated attribute
+    object_id    = azuread_application.extension_attribute_app.object_id
+    display_name = azuread_application.extension_attribute_app.display_name
   }
 }
 
 output "deployment_summary" {
   description = "Summary of the deployed resources and next steps"
   value = {
-    storage_account   = azurerm_storage_account.main.name
-    file_share       = azurerm_storage_share.attribute_management.name
+    resource_group     = azurerm_resource_group.main.name
+    storage_account    = azurerm_storage_account.main.name
+    file_share         = azurerm_storage_share.attribute_management.name
     automation_account = azurerm_automation_account.main.name
-    runbook          = azurerm_automation_runbook.extension_attribute_management.name
-    html_interface   = "\\\\${azurerm_storage_account.main.name}.file.core.windows.net\\${azurerm_storage_share.attribute_management.name}\\config\\attribute-management.html"
+    runbook           = azurerm_automation_runbook.extension_attribute_management.name
+    web_app           = azurerm_linux_web_app.main.name
+    web_app_url       = "https://${azurerm_linux_web_app.main.default_hostname}"
+    key_vault         = azurerm_key_vault.main.name
+    html_interface    = "\\\\${azurerm_storage_account.main.name}.file.core.windows.net\\${azurerm_storage_share.attribute_management.name}\\config\\attribute-management.html"
     next_steps = [
-      "1. Access the HTML interface at the provided path",
-      "2. Configure extension attribute settings via the web interface",
-      "3. Test the runbook execution in Azure Automation Account",
-      "4. Set up email notifications if required",
-      "5. Enable scheduled execution if needed"
+      "1. Access the web interface at: https://${azurerm_linux_web_app.main.default_hostname}",
+      "2. Deploy the web application code to the App Service",
+      "3. Configure email settings in Key Vault (email-from, email-to)",
+      "4. Test extension attribute management in What-If mode",
+      "5. Configure Graph API admin consent if needed",
+      "6. Set up monitoring and alerts as required"
     ]
   }
 }
@@ -118,9 +143,11 @@ output "role_assignments" {
 output "monitoring_and_logs" {
   description = "Locations for monitoring and logs"
   value = {
-    execution_logs = "\\\\${azurerm_storage_account.main.name}.file.core.windows.net\\${azurerm_storage_share.attribute_management.name}\\logs\\"
-    html_reports  = "\\\\${azurerm_storage_account.main.name}.file.core.windows.net\\${azurerm_storage_share.attribute_management.name}\\reports\\"
-    config_backups = "\\\\${azurerm_storage_account.main.name}.file.core.windows.net\\${azurerm_storage_share.attribute_management.name}\\backups\\"
-    automation_logs = "Azure Portal -> Automation Account -> Jobs"
+    execution_logs     = "\\\\${azurerm_storage_account.main.name}.file.core.windows.net\\${azurerm_storage_share.attribute_management.name}\\logs\\"
+    html_reports      = "\\\\${azurerm_storage_account.main.name}.file.core.windows.net\\${azurerm_storage_share.attribute_management.name}\\reports\\"
+    config_backups    = "\\\\${azurerm_storage_account.main.name}.file.core.windows.net\\${azurerm_storage_share.attribute_management.name}\\backups\\"
+    automation_logs   = "Azure Portal -> Automation Account -> Jobs"
+    application_insights = azurerm_application_insights.main.name
+    web_app_logs      = "Azure Portal -> App Service -> Log stream"
   }
 }

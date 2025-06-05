@@ -136,13 +136,15 @@ resource "azurerm_automation_variable_string" "key_vault" {
   description            = "Key Vault name for secure configuration"
 }
 
-# PowerShell Modules
+# PowerShell Modules - Fixed syntax
 resource "azurerm_automation_module" "graph_authentication" {
   name                    = "Microsoft.Graph.Authentication"
   automation_account_name = azurerm_automation_account.main.name
   resource_group_name     = azurerm_resource_group.main.name
   
-  module_uri = "https://www.powershellgallery.com/packages/Microsoft.Graph.Authentication"
+  module_link {
+    uri = "https://www.powershellgallery.com/packages/Microsoft.Graph.Authentication"
+  }
   
   depends_on = [azurerm_automation_account.main]
 }
@@ -152,7 +154,9 @@ resource "azurerm_automation_module" "graph_users" {
   automation_account_name = azurerm_automation_account.main.name
   resource_group_name     = azurerm_resource_group.main.name
   
-  module_uri = "https://www.powershellgallery.com/packages/Microsoft.Graph.Users"
+  module_link {
+    uri = "https://www.powershellgallery.com/packages/Microsoft.Graph.Users"
+  }
   
   depends_on = [azurerm_automation_module.graph_authentication]
 }
@@ -162,7 +166,9 @@ resource "azurerm_automation_module" "graph_mail" {
   automation_account_name = azurerm_automation_account.main.name
   resource_group_name     = azurerm_resource_group.main.name
   
-  module_uri = "https://www.powershellgallery.com/packages/Microsoft.Graph.Mail"
+  module_link {
+    uri = "https://www.powershellgallery.com/packages/Microsoft.Graph.Mail"
+  }
   
   depends_on = [azurerm_automation_module.graph_users]
 }
@@ -172,7 +178,9 @@ resource "azurerm_automation_module" "graph_groups" {
   automation_account_name = azurerm_automation_account.main.name
   resource_group_name     = azurerm_resource_group.main.name
   
-  module_uri = "https://www.powershellgallery.com/packages/Microsoft.Graph.Groups"
+  module_link {
+    uri = "https://www.powershellgallery.com/packages/Microsoft.Graph.Groups"
+  }
   
   depends_on = [azurerm_automation_module.graph_mail]
 }
@@ -182,7 +190,9 @@ resource "azurerm_automation_module" "graph_devicemanagement" {
   automation_account_name = azurerm_automation_account.main.name
   resource_group_name     = azurerm_resource_group.main.name
   
-  module_uri = "https://www.powershellgallery.com/packages/Microsoft.Graph.DeviceManagement"
+  module_link {
+    uri = "https://www.powershellgallery.com/packages/Microsoft.Graph.DeviceManagement"
+  }
   
   depends_on = [azurerm_automation_module.graph_groups]
 }
@@ -192,7 +202,9 @@ resource "azurerm_automation_module" "az_storage" {
   automation_account_name = azurerm_automation_account.main.name
   resource_group_name     = azurerm_resource_group.main.name
   
-  module_uri = "https://www.powershellgallery.com/packages/Az.Storage"
+  module_link {
+    uri = "https://www.powershellgallery.com/packages/Az.Storage"
+  }
   
   depends_on = [azurerm_automation_module.graph_devicemanagement]
 }
@@ -202,7 +214,9 @@ resource "azurerm_automation_module" "az_accounts" {
   automation_account_name = azurerm_automation_account.main.name
   resource_group_name     = azurerm_resource_group.main.name
   
-  module_uri = "https://www.powershellgallery.com/packages/Az.Accounts"
+  module_link {
+    uri = "https://www.powershellgallery.com/packages/Az.Accounts"
+  }
   
   depends_on = [azurerm_automation_module.az_storage]
 }
@@ -212,7 +226,9 @@ resource "azurerm_automation_module" "az_compute" {
   automation_account_name = azurerm_automation_account.main.name
   resource_group_name     = azurerm_resource_group.main.name
   
-  module_uri = "https://www.powershellgallery.com/packages/Az.Compute"
+  module_link {
+    uri = "https://www.powershellgallery.com/packages/Az.Compute"
+  }
   
   depends_on = [azurerm_automation_module.az_accounts]
 }
@@ -260,6 +276,7 @@ resource "azurerm_linux_web_app" "main" {
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   service_plan_id     = azurerm_service_plan.main.id
+  https_only          = true  # Moved to root level
 
   site_config {
     application_stack {
@@ -267,9 +284,6 @@ resource "azurerm_linux_web_app" "main" {
     }
     
     always_on = var.app_service_plan_sku != "F1" ? true : false
-    
-    # Enable HTTPS only
-    https_only = true
     
     # Application settings for the web interface
     app_command_line = "npm start"
@@ -442,7 +456,7 @@ resource "azuread_application" "extension_attribute_app" {
 }
 
 resource "azuread_service_principal" "extension_attribute_sp" {
-  application_id = azuread_application.extension_attribute_app.application_id
+  client_id = azuread_application.extension_attribute_app.client_id  # Fixed deprecated attribute
   
   depends_on = [azuread_application.extension_attribute_app]
   
@@ -450,7 +464,7 @@ resource "azuread_service_principal" "extension_attribute_sp" {
 }
 
 data "azuread_service_principal" "microsoft_graph" {
-  application_id = "00000003-0000-0000-c000-000000000000"
+  client_id = "00000003-0000-0000-c000-000000000000"  # Fixed deprecated attribute
 }
 
 # Graph API Role Assignments
