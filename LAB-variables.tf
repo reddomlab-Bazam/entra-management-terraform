@@ -113,7 +113,7 @@ variable "automation_sku" {
   }
 }
 
-# New variables for web interface
+# Web Application Variables
 variable "web_app_name" {
   description = "Name of the web application"
   type        = string
@@ -123,7 +123,7 @@ variable "web_app_name" {
 variable "app_service_plan_name" {
   description = "Name of the App Service Plan"
   type        = string
-  default     = "lab-uks-entra-asp"
+  default     = "lab-uks-entra-webapp-plan"
 }
 
 variable "app_service_plan_sku" {
@@ -132,7 +132,7 @@ variable "app_service_plan_sku" {
   default     = "F1"
   
   validation {
-    condition     = contains(["F1", "D1", "B1", "B2", "B3", "S1", "S2", "S3"], var.app_service_plan_sku)
+    condition     = contains(["F1", "D1", "B1", "B2", "B3", "S1", "S2", "S3", "P1v2", "P2v2", "P3v2"], var.app_service_plan_sku)
     error_message = "App Service Plan SKU must be a valid SKU."
   }
 }
@@ -141,4 +141,42 @@ variable "key_vault_name" {
   description = "Name of the Key Vault"
   type        = string
   default     = "lab-uks-entra-kv"
+}
+
+# Email Configuration Variables
+variable "from_email" {
+  description = "From email address for automation notifications"
+  type        = string
+  default     = "automation@lab.local"
+}
+
+variable "to_email" {
+  description = "To email address for automation notifications" 
+  type        = string
+  default     = "admin@lab.local"
+}
+
+# Application Insights Variables
+variable "application_insights_type" {
+  description = "Application type for Application Insights"
+  type        = string
+  default     = "web"
+  
+  validation {
+    condition     = contains(["web", "ios", "other", "store", "java", "phone"], var.application_insights_type)
+    error_message = "Application Insights type must be one of: web, ios, other, store, java, phone."
+  }
+}
+
+# Resource Tags
+variable "common_tags" {
+  description = "Common tags to apply to all resources"
+  type        = map(string)
+  default = {
+    Environment = "Lab"
+    Purpose     = "Entra Extension Attribute Management"
+    CreatedBy   = "Terraform"
+    Project     = "EntraManagement"
+    Owner       = "lab-admin"
+  }
 }

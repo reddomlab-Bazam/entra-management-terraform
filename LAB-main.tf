@@ -231,13 +231,18 @@ resource "azurerm_application_insights" "main" {
   }
 }
 
-# App Service Plan
+# App Service Plan - Fixed to prevent replacement
 resource "azurerm_service_plan" "main" {
-  name                = var.app_service_plan_name
+  name                = "lab-uks-entra-webapp-plan"  # Use exact existing name
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   os_type             = "Linux"
-  sku_name            = var.app_service_plan_sku
+  sku_name            = "F1"  # Keep existing SKU
+
+  # Prevent replacement during updates
+  lifecycle {
+    ignore_changes = [tags]
+  }
 
   tags = {
     Environment = "Lab"
