@@ -136,3 +136,9 @@ variable "app_service_plan_sku" {
     error_message = "App Service Plan SKU must be a valid SKU."
   }
 }
+
+variable "key_vault_name" {
+  description = "Name of the Key Vault"
+  type        = string
+  default     = "lab-uks-entra-kv"
+}
