@@ -38,5 +38,5 @@ app.get('/health', (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(\`🎯 Entra Management Console running on port \${port}\`);
+    console.log(`🎯 Entra Management Console running on port ${port}`);
 });
