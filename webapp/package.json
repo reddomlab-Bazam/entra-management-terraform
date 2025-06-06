@@ -5,28 +5,15 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
-    "build": "npm install --production",
-    "test": "echo \"No tests specified\" && exit 0"
+    "build": "npm install --production"
   },
-  "keywords": [
-    "azure",
-    "entra-id",
-    "automation",
-    "management"
-  ],
-  "author": "Vitesse PSP",
-  "license": "ISC",
   "dependencies": {
-    "@azure/arm-automation": "^11.0.0",
+    "@azure/arm-automation": "^10.0.0",
     "@azure/identity": "^3.4.2",
     "@azure/storage-file-share": "^12.16.0",
     "archiver": "^6.0.1",
     "dotenv": "^16.3.1",
     "express": "^4.18.2"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.2"
   },
   "engines": {
     "node": ">=18.0.0",
