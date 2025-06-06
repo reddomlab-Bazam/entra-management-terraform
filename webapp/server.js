@@ -1,7 +1,4 @@
 const express = require('express');
-const path = require('path');
-const fs = require('fs');
-
 const app = express();
 const port = process.env.PORT || 8080;
 
@@ -9,7 +6,6 @@ app.use(express.json());
 
 // Serve the management interface at root
 app.get('/', (req, res) => {
-    // Embed the management interface directly in the response
     res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -102,6 +98,9 @@ app.get('/', (req, res) => {
             cursor: pointer;
             transition: all 0.3s ease;
             margin-right: 10px;
+            margin-bottom: 10px;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .btn:hover {
@@ -121,6 +120,21 @@ app.get('/', (req, res) => {
             color: #92400e;
             border: 1px solid #fcd34d;
         }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #a7f3d0;
+        }
+
+        ul, ol {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -128,6 +142,7 @@ app.get('/', (req, res) => {
         <div class="header">
             <h1>🎯 Entra Management Console</h1>
             <p>Automated Extension Attributes, Device Cleanup & Group Management</p>
+            <p>Running on Node.js ${process.version}</p>
         </div>
 
         <div class="nav-tabs">
@@ -149,6 +164,7 @@ app.get('/', (req, res) => {
                     <li>✅ IP restrictions active</li>
                     <li>✅ PowerShell 7.2 runtime configured</li>
                     <li>✅ Microsoft Graph modules installed</li>
+                    <li>✅ Azure AD application created</li>
                 </ul>
             </div>
 
@@ -164,10 +180,25 @@ app.get('/', (req, res) => {
 
             <div class="status-card">
                 <h3>🔧 Quick Actions</h3>
-                <button class="btn" onclick="testConnection()">Test Graph Connection</button>
-                <button class="btn" onclick="window.open('https://portal.azure.com/#@/resource/subscriptions/${process.env.AZURE_SUBSCRIPTION_ID || 'your-subscription'}/resourceGroups/${process.env.RESOURCE_GROUP_NAME || 'your-rg'}/providers/Microsoft.Automation/automationAccounts/${process.env.AUTOMATION_ACCOUNT_NAME || 'your-automation'}/variables', '_blank')">
-                    Configure Variables
-                </button>
+                <a href="https://portal.azure.com" target="_blank" class="btn">Open Azure Portal</a>
+                <button class="btn" onclick="testConnection()">Test Connection</button>
+                <button class="btn" onclick="showConfig()">Show Config Steps</button>
+            </div>
+
+            <div class="status-card">
+                <h3>📋 Configuration Checklist</h3>
+                <p><strong>Step 1: Authentication Variables</strong></p>
+                <ul>
+                    <li>AzureADClientSecret (encrypted) ← Your app secret</li>
+                    <li>AzureADClientId ← Your app ID</li> 
+                    <li>AzureADTenantId ← Your tenant ID</li>
+                </ul>
+                
+                <p><strong>Step 2: Email Configuration</strong></p>
+                <ul>
+                    <li>EntraMgmt_FromEmail ← Real email address</li>
+                    <li>EntraMgmt_ToEmail ← Real email address</li>
+                </ul>
             </div>
         </div>
 
@@ -177,7 +208,15 @@ app.get('/', (req, res) => {
             <div class="alert alert-warning">
                 <strong>Setup Required:</strong> Configure Azure AD authentication variables before using this feature.
             </div>
-            <p>This tab will allow you to manage extension attributes once authentication is configured.</p>
+            <div class="status-card">
+                <h4>🔧 Extension Attribute Features</h4>
+                <ul>
+                    <li>Manage extension attributes 1-15</li>
+                    <li>Bulk user updates via email lists</li>
+                    <li>What-If preview mode</li>
+                    <li>Automated email reports</li>
+                </ul>
+            </div>
         </div>
 
         <!-- Device Cleanup Tab -->
@@ -186,7 +225,16 @@ app.get('/', (req, res) => {
             <div class="alert alert-warning">
                 <strong>Setup Required:</strong> Configure Azure AD authentication variables before using this feature.
             </div>
-            <p>This tab will allow you to manage device cleanup once authentication is configured.</p>
+            <div class="status-card">
+                <h4>🗑️ Device Cleanup Features</h4>
+                <ul>
+                    <li>Automatic inactive device detection (120+ days)</li>
+                    <li>Mobile device cleanup (unmanaged iOS/Android)</li>
+                    <li>Desktop device management (Windows/macOS/Linux)</li>
+                    <li>Azure VM protection (automatically excluded)</li>
+                    <li>Safety limits and What-If preview</li>
+                </ul>
+            </div>
         </div>
 
         <!-- Group Management Tab -->
@@ -195,7 +243,15 @@ app.get('/', (req, res) => {
             <div class="alert alert-warning">
                 <strong>Setup Required:</strong> Configure Azure AD authentication variables before using this feature.
             </div>
-            <p>This tab will allow you to manage group memberships once authentication is configured.</p>
+            <div class="status-card">
+                <h4>👥 Group Management Features</h4>
+                <ul>
+                    <li>Automated group membership cleanup</li>
+                    <li>User age-based removal criteria</li>
+                    <li>Bulk group processing</li>
+                    <li>Detailed audit logs</li>
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -220,13 +276,15 @@ app.get('/', (req, res) => {
         }
 
         function testConnection() {
-            alert('Connection test feature will be implemented after authentication setup.');
+            alert('Connection test will be available after authentication setup. Please configure the Azure AD variables first.');
+        }
+
+        function showConfig() {
+            alert('Configuration Steps:\\n\\n1. Go to Azure Portal → Automation Account → Variables\\n2. Add: AzureADClientSecret (encrypted)\\n3. Add: AzureADClientId\\n4. Add: AzureADTenantId\\n5. Update email addresses\\n6. Test with What-If mode');
         }
     </script>
 </body>
 </html>`);
-});
-
 });
 
 // Health check endpoint
@@ -235,14 +293,11 @@ app.get('/health', (req, res) => {
         status: 'healthy',
         timestamp: new Date().toISOString(),
         nodeVersion: process.version,
-        port: port,
-        files: {
-            managementInterface: fs.existsSync('attribute-management.html') ? 'available' : 'missing'
-        }
+        port: port
     });
 });
 
-// Basic API endpoints (placeholders for when interface is uploaded)
+// Basic API endpoints (placeholders)
 app.post('/api/execute-runbook', (req, res) => {
     res.status(501).json({
         success: false,
@@ -271,11 +326,4 @@ app.listen(port, () => {
     console.log(`🎯 Entra Management Console running on port ${port}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`Node.js version: ${process.version}`);
-    
-    // Check for management interface
-    if (fs.existsSync('attribute-management.html')) {
-        console.log('✅ Management interface available');
-    } else {
-        console.log('⚠️  Management interface not found - upload attribute-management.html');
-    }
 });
