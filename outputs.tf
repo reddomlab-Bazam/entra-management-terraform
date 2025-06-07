@@ -291,3 +291,106 @@ output "log_analytics_workspace_id" {
   description = "ID of the Log Analytics Workspace"
   value       = azurerm_log_analytics_workspace.main.id
 }
+
+# Add these outputs to your existing outputs.tf
+
+# =============================================================================
+# AUTHENTICATION CONFIGURATION OUTPUTS
+# =============================================================================
+
+output "web_app_client_id" {
+  description = "Client ID of the web application for Entra ID authentication"
+  value       = azuread_application.web_app.client_id
+}
+
+output "web_app_object_id" {
+  description = "Object ID of the web application"
+  value       = azuread_application.web_app.object_id
+}
+
+output "automation_app_client_id" {
+  description = "Client ID of the automation application"
+  value       = azuread_application.automation.client_id
+  sensitive   = true
+}
+
+output "tenant_id" {
+  description = "Azure AD tenant ID"
+  value       = data.azurerm_client_config.current.tenant_id
+}
+
+output "subscription_id" {
+  description = "Azure subscription ID"
+  value       = data.azurerm_client_config.current.subscription_id
+}
+
+# =============================================================================
+# AUTHENTICATION CONFIGURATION SUMMARY
+# =============================================================================
+
+output "authentication_configuration" {
+  description = "Authentication configuration details"
+  value = {
+    web_app = {
+      client_id     = azuread_application.web_app.client_id
+      object_id     = azuread_application.web_app.object_id
+      redirect_uris = azuread_application.web_app.single_page_application[0].redirect_uris
+    }
+    automation = {
+      client_id = azuread_application.automation.client_id
+      object_id = azuread_application.automation.object_id
+    }
+    tenant_id = data.azurerm_client_config.current.tenant_id
+  }
+  sensitive = false
+}
+
+# =============================================================================
+# ENHANCED DEPLOYMENT SUMMARY
+# =============================================================================
+
+output "enhanced_deployment_summary" {
+  description = "Enhanced summary including authentication"
+  value = {
+    # Existing infrastructure
+    resource_group       = azurerm_resource_group.main.name
+    location            = azurerm_resource_group.main.location
+    storage_account     = azurerm_storage_account.main.name
+    automation_account  = azurerm_automation_account.main.name
+    key_vault          = azurerm_key_vault.main.name
+    web_app            = azurerm_linux_web_app.main.name
+    
+    # Authentication
+    web_app_client_id   = azuread_application.web_app.client_id
+    automation_client_id = azuread_application.automation.client_id
+    tenant_id          = data.azurerm_client_config.current.tenant_id
+    
+    # URLs
+    web_app_url        = "https://${azurerm_linux_web_app.main.default_hostname}"
+    
+    # Deployment metadata
+    deployment_time    = timestamp()
+  }
+}
+
+# =============================================================================
+# POST-DEPLOYMENT STEPS
+# =============================================================================
+
+output "authentication_setup_complete" {
+  description = "Authentication setup status and next steps"
+  value = {
+    status = "✅ Entra ID authentication configured"
+    next_steps = [
+      "1. Install PowerShell modules in Automation Account (Microsoft.Graph.*)",
+      "2. Deploy enhanced web application code with authentication", 
+      "3. Assign Entra ID roles to users who need access",
+      "4. Test authentication flow in web application",
+      "5. Update email addresses in automation variables if needed"
+    ]
+    test_urls = {
+      web_app = "https://${azurerm_linux_web_app.main.default_hostname}"
+      azure_ad_apps = "https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/RegisteredApps"
+    }
+  }
+}

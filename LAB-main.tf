@@ -499,3 +499,234 @@ EOT
     Purpose     = "Extension Attribute Management"
   }
 }
+
+# Add these sections to your existing LAB-main.tf
+
+# =============================================================================
+# ENTRA ID APP REGISTRATIONS (ADD AFTER data "azurerm_client_config" "current")
+# =============================================================================
+
+# Create Azure AD Application for web authentication
+resource "azuread_application" "web_app" {
+  display_name = "${local.naming_prefix}-web-app"
+  description  = "Web application for Entra Management Console with RBAC authentication"
+  
+  # Single Page Application configuration
+  single_page_application {
+    redirect_uris = [
+      "https://${var.web_app_name}.azurewebsites.net",
+      "https://${var.web_app_name}.azurewebsites.net/"
+    ]
+  }
+
+  # Required resource access for Microsoft Graph
+  required_resource_access {
+    resource_app_id = "00000003-0000-0000-c000-000000000000" # Microsoft Graph
+
+    # Delegated permissions for user context
+    resource_access {
+      id   = "e1fe6dd8-ba31-4d61-89e7-88639da4683d" # User.Read
+      type = "Scope"
+    }
+    
+    resource_access {
+      id   = "b4e74841-8e56-480b-be8b-910348b18b4c" # User.ReadWrite.All
+      type = "Scope"
+    }
+    
+    resource_access {
+      id   = "2f51be20-0bb4-4fed-bf7b-db946066c75e" # Device.ReadWrite.All
+      type = "Scope"
+    }
+    
+    resource_access {
+      id   = "4e46008b-f24c-477d-8fff-7bb4ec7aafe0" # Group.ReadWrite.All
+      type = "Scope"
+    }
+    
+    resource_access {
+      id   = "06da0dbc-49e2-44d2-8312-53f166ab848a" # Directory.Read.All
+      type = "Scope"
+    }
+  }
+
+  tags = ["EntraManagement", "WebApp", "Authentication"]
+}
+
+# Create service principal for the web app
+resource "azuread_service_principal" "web_app" {
+  client_id                    = azuread_application.web_app.client_id
+  app_role_assignment_required = false
+  owners                       = [data.azurerm_client_config.current.object_id]
+
+  tags = ["EntraManagement", "WebApp", "ServicePrincipal"]
+}
+
+# Create Azure AD Application for automation account
+resource "azuread_application" "automation" {
+  display_name = "${local.naming_prefix}-automation"
+  description  = "Service application for Entra Management automation runbooks"
+
+  # Application permissions for service-to-service
+  required_resource_access {
+    resource_app_id = "00000003-0000-0000-c000-000000000000" # Microsoft Graph
+
+    # Application permissions for automation
+    resource_access {
+      id   = "df021288-bdef-4463-88db-98f22de89214" # User.Read.All
+      type = "Role"
+    }
+    
+    resource_access {
+      id   = "741f803b-c850-494e-b5df-cde7c675a1ca" # User.ReadWrite.All
+      type = "Role"
+    }
+    
+    resource_access {
+      id   = "1138cb37-bd11-4084-a2b7-9f71582aeddb" # Device.ReadWrite.All
+      type = "Role"
+    }
+    
+    resource_access {
+      id   = "62a82d76-70ea-41e2-9197-370581804d09" # Group.ReadWrite.All
+      type = "Role"
+    }
+    
+    resource_access {
+      id   = "b633e1c5-b582-4048-a93e-9f11b44c7e96" # Mail.Send
+      type = "Role"
+    }
+  }
+
+  tags = ["EntraManagement", "Automation", "ServiceApp"]
+}
+
+# Create service principal for automation
+resource "azuread_service_principal" "automation" {
+  client_id                    = azuread_application.automation.client_id
+  app_role_assignment_required = false
+  owners                       = [data.azurerm_client_config.current.object_id]
+
+  tags = ["EntraManagement", "Automation", "ServicePrincipal"]
+}
+
+# Create client secret for automation application
+resource "azuread_application_password" "automation" {
+  application_id = azuread_application.automation.id
+  display_name   = "Terraform managed secret"
+  
+  # Rotate every 24 months
+  end_date_relative = "17520h" # 24 months
+}
+
+# Data source for Microsoft Graph service principal
+data "azuread_service_principal" "msgraph" {
+  client_id = "00000003-0000-0000-c000-000000000000"
+}
+
+# Grant admin consent for automation app
+resource "azuread_app_role_assignment" "automation_user_readwrite" {
+  app_role_id         = "741f803b-c850-494e-b5df-cde7c675a1ca" # User.ReadWrite.All
+  principal_object_id = azuread_service_principal.automation.object_id
+  resource_object_id  = data.azuread_service_principal.msgraph.object_id
+}
+
+resource "azuread_app_role_assignment" "automation_device_readwrite" {
+  app_role_id         = "1138cb37-bd11-4084-a2b7-9f71582aeddb" # Device.ReadWrite.All
+  principal_object_id = azuread_service_principal.automation.object_id
+  resource_object_id  = data.azuread_service_principal.msgraph.object_id
+}
+
+resource "azuread_app_role_assignment" "automation_group_readwrite" {
+  app_role_id         = "62a82d76-70ea-41e2-9197-370581804d09" # Group.ReadWrite.All
+  principal_object_id = azuread_service_principal.automation.object_id
+  resource_object_id  = data.azuread_service_principal.msgraph.object_id
+}
+
+resource "azuread_app_role_assignment" "automation_mail_send" {
+  app_role_id         = "b633e1c5-b582-4048-a93e-9f11b44c7e96" # Mail.Send
+  principal_object_id = azuread_service_principal.automation.object_id
+  resource_object_id  = data.azuread_service_principal.msgraph.object_id
+}
+
+# =============================================================================
+# ENHANCED AUTOMATION VARIABLES (ADD TO EXISTING AUTOMATION VARIABLES SECTION)
+# =============================================================================
+
+# Azure AD Authentication Variables for Automation
+resource "azurerm_automation_variable_string" "azure_ad_client_id" {
+  name                    = "AzureADClientId"
+  automation_account_name = azurerm_automation_account.main.name
+  resource_group_name     = azurerm_resource_group.main.name
+  value                   = azuread_application.automation.client_id
+  description             = "Azure AD application client ID for automation"
+}
+
+resource "azurerm_automation_variable_string" "azure_ad_tenant_id" {
+  name                    = "AzureADTenantId"
+  automation_account_name = azurerm_automation_account.main.name
+  resource_group_name     = azurerm_resource_group.main.name
+  value                   = data.azurerm_client_config.current.tenant_id
+  description             = "Azure AD tenant ID"
+}
+
+resource "azurerm_automation_variable_string" "azure_ad_client_secret" {
+  name                    = "AzureADClientSecret"
+  automation_account_name = azurerm_automation_account.main.name
+  resource_group_name     = azurerm_resource_group.main.name
+  value                   = azuread_application_password.automation.value
+  description             = "Azure AD application client secret"
+  encrypted               = true
+}
+
+# =============================================================================
+# ENHANCED WEB APP CONFIGURATION (MODIFY EXISTING app_settings)
+# =============================================================================
+
+# In your existing azurerm_linux_web_app "main" resource, 
+# ADD these to the app_settings block:
+
+  # Add these lines to your existing app_settings block:
+  # "AZURE_CLIENT_ID"     = azuread_application.web_app.client_id
+  # "AZURE_TENANT_ID"     = data.azurerm_client_config.current.tenant_id
+  # "NODE_ENV"            = "production"
+
+# =============================================================================
+# ENHANCED KEY VAULT SECRETS (ADD TO KEY VAULT SECTION)
+# =============================================================================
+
+# Store automation client secret in Key Vault as backup
+resource "azurerm_key_vault_secret" "automation_client_secret" {
+  name         = "AutomationClientSecret"
+  value        = azuread_application_password.automation.value
+  key_vault_id = azurerm_key_vault.main.id
+
+  depends_on = [azurerm_key_vault_access_policy.current_user]
+
+  tags = local.tags_all
+}
+
+# =============================================================================
+# RBAC ASSIGNMENTS (ADD AT THE END)
+# =============================================================================
+
+# Grant Web App managed identity storage access
+resource "azurerm_role_assignment" "webapp_storage_contributor" {
+  scope                = azurerm_storage_account.main.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_linux_web_app.main.identity[0].principal_id
+}
+
+# Grant Web App managed identity automation access
+resource "azurerm_role_assignment" "webapp_automation_contributor" {
+  scope                = azurerm_automation_account.main.id
+  role_definition_name = "Automation Contributor"
+  principal_id         = azurerm_linux_web_app.main.identity[0].principal_id
+}
+
+# Grant Automation Account managed identity storage access
+resource "azurerm_role_assignment" "automation_storage_contributor" {
+  scope                = azurerm_storage_account.main.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_automation_account.main.identity[0].principal_id
+}

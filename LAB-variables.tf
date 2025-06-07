@@ -177,3 +177,53 @@ variable "allowed_ip_address" {
   type        = string
   default     = "84.70.131.207"  # Replace with your actual IP
 }
+
+# Add these variables to your existing LAB-variables.tf
+
+# Authentication Configuration Variables
+variable "web_app_redirect_uris" {
+  description = "Additional redirect URIs for the web application (beyond the default)"
+  type        = list(string)
+  default     = []
+}
+
+variable "enable_admin_consent" {
+  description = "Whether to automatically grant admin consent for the automation application"
+  type        = bool
+  default     = true
+}
+
+variable "client_secret_expiry_months" {
+  description = "Number of months until client secret expires"
+  type        = number
+  default     = 24
+  
+  validation {
+    condition     = var.client_secret_expiry_months >= 6 && var.client_secret_expiry_months <= 24
+    error_message = "Client secret expiry must be between 6 and 24 months."
+  }
+}
+
+# Security Configuration
+variable "enable_ip_restrictions" {
+  description = "Enable IP restrictions for the web application"
+  type        = bool
+  default     = true
+}
+
+variable "enable_https_only" {
+  description = "Force HTTPS only for the web application"
+  type        = bool
+  default     = true
+}
+
+variable "minimum_tls_version" {
+  description = "Minimum TLS version for the web application"
+  type        = string
+  default     = "1.2"
+  
+  validation {
+    condition     = contains(["1.0", "1.1", "1.2"], var.minimum_tls_version)
+    error_message = "Minimum TLS version must be 1.0, 1.1, or 1.2."
+  }
+}
