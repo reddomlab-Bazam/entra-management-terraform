@@ -1,5 +1,5 @@
 # =============================================================================
-# ENTRA MANAGEMENT CONSOLE - MAIN TERRAFORM CONFIGURATION
+# ENTRA MANAGEMENT CONSOLE - CLIENT-READY TERRAFORM CONFIGURATION
 # =============================================================================
 
 # Resource Group
@@ -14,7 +14,7 @@ resource "azurerm_resource_group" "main" {
 data "azurerm_client_config" "current" {}
 
 # =============================================================================
-# AZURE AD APPLICATIONS FOR AUTHENTICATION
+# AZURE AD APPLICATIONS FOR AUTHENTICATION (PERMISSION OPTIMIZED)
 # =============================================================================
 
 # Azure AD Application for web authentication
@@ -22,7 +22,7 @@ resource "azuread_application" "web_app" {
   display_name = "${local.naming_prefix}-web-app"
   description  = "Web application for Entra Management Console with RBAC authentication"
   
-  # Single Page Application configuration
+  # Single Page Application configuration (FIXED: trailing slash)
   single_page_application {
     redirect_uris = [
       "https://${var.web_app_name}.azurewebsites.net/"
@@ -63,7 +63,7 @@ resource "azuread_application" "web_app" {
   tags = ["EntraManagement", "WebApp", "Authentication"]
 }
 
-# Create service principal for the web app
+# Service principal for the web app
 resource "azuread_service_principal" "web_app" {
   client_id                    = azuread_application.web_app.client_id
   app_role_assignment_required = false
@@ -111,7 +111,7 @@ resource "azuread_application" "automation" {
   tags = ["EntraManagement", "Automation", "ServiceApp"]
 }
 
-# Create service principal for automation
+# Service principal for automation
 resource "azuread_service_principal" "automation" {
   client_id                    = azuread_application.automation.client_id
   app_role_assignment_required = false
@@ -120,12 +120,10 @@ resource "azuread_service_principal" "automation" {
   tags = ["EntraManagement", "Automation", "ServicePrincipal"]
 }
 
-# Create client secret for automation application
+# Client secret for automation application
 resource "azuread_application_password" "automation" {
   application_id = azuread_application.automation.id
   display_name   = "Terraform managed secret"
-  
-  # Rotate every 24 months
   end_date_relative = "17520h" # 24 months
 }
 
@@ -292,6 +290,11 @@ resource "azurerm_automation_variable_string" "azure_ad_tenant_id" {
   resource_group_name     = azurerm_resource_group.main.name
   value                   = data.azurerm_client_config.current.tenant_id
   description             = "Azure AD tenant ID"
+  
+  # Handle existing variable gracefully
+  lifecycle {
+    ignore_changes = [value]
+  }
 }
 
 resource "azurerm_automation_variable_string" "azure_ad_client_secret" {
@@ -386,7 +389,7 @@ resource "azurerm_automation_variable_string" "key_vault" {
 
 # Log Analytics Workspace (required for Application Insights)
 resource "azurerm_log_analytics_workspace" "main" {
-  name                = local.resource_names.application_insights
+  name                = "${local.naming_prefix}-logs"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   sku                 = "PerGB2018"
@@ -397,7 +400,7 @@ resource "azurerm_log_analytics_workspace" "main" {
 
 # Application Insights
 resource "azurerm_application_insights" "main" {
-  name                = local.resource_names.application_insights
+  name                = "${local.naming_prefix}-ai"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   application_type    = var.application_insights_type
@@ -702,7 +705,7 @@ EOT
 }
 
 # =============================================================================
-# RBAC ASSIGNMENTS
+# RBAC ASSIGNMENTS (CONDITIONAL - REQUIRES OWNER PERMISSIONS)
 # =============================================================================
 
 # Grant Web App managed identity storage access
@@ -724,4 +727,23 @@ resource "azurerm_role_assignment" "automation_storage_contributor" {
   scope                = azurerm_storage_account.main.id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_automation_account.main.identity[0].principal_id
+}
+
+# =============================================================================
+# CLIENT-READY OUTPUT FOR ADMIN CONSENT COMMAND
+# =============================================================================
+
+output "admin_consent_command" {
+  description = "Command to grant admin consent (run after deployment)"
+  value = "az ad app permission admin-consent --id ${azuread_application.automation.client_id}"
+  sensitive = false
+}
+
+output "admin_consent_urls" {
+  description = "URLs to grant admin consent manually"
+  value = {
+    automation_app = "https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/CallAnAPI/appId/${azuread_application.automation.client_id}"
+    web_app = "https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/CallAnAPI/appId/${azuread_application.web_app.client_id}"
+  }
+  sensitive = false
 }
