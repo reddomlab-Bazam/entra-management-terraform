@@ -1,5 +1,5 @@
 # =============================================================================
-# ENTRA MANAGEMENT CONSOLE - CLIENT-READY TERRAFORM CONFIGURATION
+# ENTRA MANAGEMENT CONSOLE - CORRECTED TERRAFORM CONFIGURATION
 # =============================================================================
 
 # Resource Group
@@ -14,7 +14,7 @@ resource "azurerm_resource_group" "main" {
 data "azurerm_client_config" "current" {}
 
 # =============================================================================
-# AZURE AD APPLICATIONS FOR AUTHENTICATION (PERMISSION OPTIMIZED)
+# AZURE AD APPLICATIONS FOR AUTHENTICATION (CORRECTED PERMISSIONS)
 # =============================================================================
 
 # Azure AD Application for web authentication
@@ -33,7 +33,7 @@ resource "azuread_application" "web_app" {
   required_resource_access {
     resource_app_id = "00000003-0000-0000-c000-000000000000" # Microsoft Graph
 
-    # Delegated permissions for user context
+    # CORRECTED delegated permissions for user context
     resource_access {
       id   = "e1fe6dd8-ba31-4d61-89e7-88639da4683d" # User.Read
       type = "Scope"
@@ -44,8 +44,9 @@ resource "azuread_application" "web_app" {
       type = "Scope"
     }
     
+    # FIXED: Device.Read.All (delegated permission exists)
     resource_access {
-      id   = "2f51be20-0bb4-4fed-bf7b-db946066c75e" # Device.ReadWrite.All
+      id   = "7438b122-aefc-4978-80ed-43db9fcc7715" # Device.Read.All
       type = "Scope"
     }
     
@@ -92,6 +93,7 @@ resource "azuread_application" "automation" {
       type = "Role"
     }
     
+    # CORRECT: Device.ReadWrite.All as application permission
     resource_access {
       id   = "1138cb37-bd11-4084-a2b7-9f71582aeddb" # Device.ReadWrite.All
       type = "Role"
@@ -104,6 +106,12 @@ resource "azuread_application" "automation" {
     
     resource_access {
       id   = "b633e1c5-b582-4048-a93e-9f11b44c7e96" # Mail.Send
+      type = "Role"
+    }
+    
+    # Add Directory.Read.All for automation
+    resource_access {
+      id   = "7ab1d382-f21e-4acd-a863-ba3e13f7da61" # Directory.Read.All
       type = "Role"
     }
   }
@@ -290,11 +298,6 @@ resource "azurerm_automation_variable_string" "azure_ad_tenant_id" {
   resource_group_name     = azurerm_resource_group.main.name
   value                   = data.azurerm_client_config.current.tenant_id
   description             = "Azure AD tenant ID"
-  
-  # Handle existing variable gracefully
-  lifecycle {
-    ignore_changes = [value]
-  }
 }
 
 resource "azurerm_automation_variable_string" "azure_ad_client_secret" {
