@@ -478,31 +478,26 @@ resource "azurerm_linux_web_app" "main" {
 
   # UPDATED: Enhanced app settings for production security
   app_settings = {
-    "AUTOMATION_ACCOUNT_NAME"               = azurerm_automation_account.main.name
-    "RESOURCE_GROUP_NAME"                   = azurerm_resource_group.main.name
-    "STORAGE_ACCOUNT_NAME"                  = azurerm_storage_account.main.name
-    "KEY_VAULT_URI"                         = azurerm_key_vault.main.vault_uri
-    "FILE_SHARE_NAME"                       = azurerm_storage_share.attribute_management.name
-    "AZURE_SUBSCRIPTION_ID"                 = data.azurerm_client_config.current.subscription_id
-    "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.main.instrumentation_key
-    "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.main.connection_string
-    "AZURE_CLIENT_ID"                       = azuread_application.web_app.client_id
-    "AZURE_TENANT_ID"                       = data.azurerm_client_config.current.tenant_id
-    
-    # PRODUCTION SECURITY SETTINGS (NEW)
-    "NODE_ENV"                              = "production"
-    "SECURITY_HEADERS"                      = "true"
-    "AUDIT_LOGGING"                         = "true"
-    "ALLOWED_ORIGINS"                       = "https://${var.web_app_name}.azurewebsites.net"
-    "NPM_CONFIG_PRODUCTION"                 = "true"
-    "WEBSITE_NODE_DEFAULT_VERSION"          = "~20"
-    "SCM_DO_BUILD_DURING_DEPLOYMENT"        = "true"
-    
-    # SECURITY ENHANCEMENT SETTINGS
-    "WEBSITE_HTTPLOGGING_RETENTION_DAYS"    = "7"
-    "WEBSITES_ENABLE_APP_SERVICE_STORAGE"   = "false"
-    "WEBSITE_DYNAMIC_CACHE"                 = "0"
-  }
+  "AUTOMATION_ACCOUNT_NAME"               = azurerm_automation_account.main.name
+  "RESOURCE_GROUP_NAME"                   = azurerm_resource_group.main.name
+  "STORAGE_ACCOUNT_NAME"                  = azurerm_storage_account.main.name
+  "KEY_VAULT_URI"                         = azurerm_key_vault.main.vault_uri
+  "FILE_SHARE_NAME"                       = azurerm_storage_share.attribute_management.name
+  "AZURE_SUBSCRIPTION_ID"                 = data.azurerm_client_config.current.subscription_id
+  "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.main.instrumentation_key
+  "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.main.connection_string
+  "AZURE_CLIENT_ID"                       = azuread_application.web_app.client_id
+  "AZURE_TENANT_ID"                       = data.azurerm_client_config.current.tenant_id
+  
+  # PRODUCTION SECURITY SETTINGS
+  "NODE_ENV"                              = "production"
+  "SECURITY_HEADERS"                      = "true"
+  "AUDIT_LOGGING"                         = "true"
+  "ALLOWED_ORIGINS"                       = "https://${var.web_app_name}.azurewebsites.net"
+  "NPM_CONFIG_PRODUCTION"                 = "true"
+  "WEBSITE_NODE_DEFAULT_VERSION"          = "~20"
+  "SCM_DO_BUILD_DURING_DEPLOYMENT"        = "true"
+}
 
   identity {
     type = "SystemAssigned"
