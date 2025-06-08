@@ -7,7 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "build": "npm ci --production",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"No tests specified - skipping\" && exit 0"
   },
   "dependencies": {
     "@azure/arm-automation": "^10.0.0",

@@ -11,7 +11,7 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: lab-uks-entra-webapp
-  AZURE_WEBAPP_PACKAGE_PATH: './webapp'
+  AZURE_WEBAPP_PACKAGE_PATH: 'webapp'
   NODE_VERSION: '18.x'
 
 permissions:
@@ -30,22 +30,23 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
-        cache-dependency-path: './webapp/package-lock.json'
+        cache-dependency-path: 'webapp/package-lock.json'
 
-    - name: Install dependencies (root)
-      run: |
-        npm ci --only=production
-        
     - name: Install dependencies (webapp)
       working-directory: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
       run: |
         npm ci --only=production --no-audit
 
-    - name: Run tests
+    - name: Install dependencies (root - for tests)
+      run: |
+        npm ci --only=production
+
+    - name: Run tests (root level)
       run: |
         npm test
 
     - name: Build application
+      working-directory: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
       run: |
         npm run build
 
@@ -54,11 +55,29 @@ jobs:
       run: |
         npm audit --audit-level high --omit dev || true
 
+    - name: Prepare deployment package
+      run: |
+        # Create deployment directory
+        mkdir -p deployment-package
+        
+        # Copy webapp contents to deployment package root
+        cp -r ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/* deployment-package/
+        
+        # Ensure node_modules are properly installed in deployment package
+        cd deployment-package
+        npm ci --only=production --no-audit
+        
+        # Clean up any unnecessary files
+        rm -rf .git* || true
+        
+        echo "Deployment package contents:"
+        ls -la
+
     - name: Upload artifact for deployment job
       uses: actions/upload-artifact@v3
       with:
         name: node-app
-        path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        path: deployment-package
 
   deploy:
     permissions:
@@ -74,7 +93,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: node-app
-        path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        path: deployment-package
 
     - name: Deploy to Azure Web App
       id: deploy-to-webapp
@@ -82,7 +101,7 @@ jobs:
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
-        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        package: deployment-package
 
     - name: Verify deployment
       run: |
