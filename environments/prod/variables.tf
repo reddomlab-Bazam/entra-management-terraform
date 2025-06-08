@@ -69,9 +69,10 @@ variable "web_app_name" {
 }
 
 variable "web_app_client_secret" {
-  description = "Client secret for the web application"
+  description = "Client secret for the web application. If not provided, it will be generated."
   type        = string
   sensitive   = true
+  default     = null
 }
 
 variable "app_service_plan_name" {

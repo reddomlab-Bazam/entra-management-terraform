@@ -10,6 +10,17 @@ data "azuread_application" "web_app" {
   display_name = var.web_app_name
 }
 
+# Generate a random password if client secret is not provided
+resource "random_password" "web_app_client_secret" {
+  count   = var.web_app_client_secret == null ? 1 : 0
+  length  = 32
+  special = true
+}
+
+locals {
+  web_app_client_secret = var.web_app_client_secret != null ? var.web_app_client_secret : random_password.web_app_client_secret[0].result
+}
+
 # Resource Group
 resource "azurerm_resource_group" "main" {
   name     = var.resource_group_name
@@ -52,7 +63,7 @@ module "webapp" {
   app_service_plan_name     = var.app_service_plan_name
   app_service_plan_sku      = var.app_service_plan_sku
   web_app_client_id         = data.azuread_application.web_app.client_id
-  web_app_client_secret     = var.web_app_client_secret
+  web_app_client_secret     = local.web_app_client_secret
   tenant_id                 = data.azurerm_client_config.current.tenant_id
   enable_ip_restrictions    = var.enable_ip_restrictions
   allowed_ip_address        = var.allowed_ip_address
@@ -116,6 +127,6 @@ resource "azurerm_key_vault_secret" "storage_key" {
 
 resource "azurerm_key_vault_secret" "webapp_client_secret" {
   name         = "webapp-client-secret"
-  value        = var.web_app_client_secret
+  value        = local.web_app_client_secret
   key_vault_id = azurerm_key_vault.main.id
 } 
