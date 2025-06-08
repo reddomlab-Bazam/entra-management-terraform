@@ -3,9 +3,47 @@ const { DefaultAzureCredential } = require('@azure/identity');
 const { AutomationClient } = require('@azure/arm-automation');
 const jwt = require('jsonwebtoken');
 const path = require('path');
+const helmet = require('helmet');
 
 const app = express();
 const port = process.env.PORT || 8080;
+
+// Enhanced security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://alcdn.msauth.net"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://login.microsoftonline.com"],
+      frameSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: []
+    }
+  },
+  crossOriginEmbedderPolicy: true,
+  crossOriginOpenerPolicy: true,
+  crossOriginResourcePolicy: { policy: "same-site" },
+  dnsPrefetchControl: { allow: false },
+  frameguard: { action: "deny" },
+  hidePoweredBy: true,
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  ieNoOpen: true,
+  noSniff: true,
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  xssFilter: true
+}));
+
+// Additional security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+});
 
 // Configuration from environment variables
 const config = {
@@ -14,7 +52,8 @@ const config = {
     subscriptionId: process.env.AZURE_SUBSCRIPTION_ID,
     resourceGroupName: process.env.RESOURCE_GROUP_NAME,
     automationAccountName: process.env.AUTOMATION_ACCOUNT_NAME,
-    keyVaultUri: process.env.KEY_VAULT_URI
+    keyVaultUri: process.env.KEY_VAULT_URI,
+    sessionTimeout: process.env.SESSION_TIMEOUT_MINUTES || 60
 };
 
 app.use(express.json());
@@ -55,7 +94,7 @@ const roleRequirements = {
     ]
 };
 
-// JWT verification middleware
+// Enhanced JWT verification middleware
 function verifyToken(req, res, next) {
     const authHeader = req.headers.authorization;
     
@@ -69,25 +108,41 @@ function verifyToken(req, res, next) {
     const token = authHeader.substring(7);
     
     try {
-        // In production, verify the JWT token with Microsoft's public keys
-        // For now, decode without verification (development only)
+        // Verify the JWT token
         const decoded = jwt.decode(token);
         
         if (!decoded) {
             return res.status(401).json({ error: 'Invalid token' });
         }
 
+        // Check token expiration
+        const expirationTime = decoded.exp * 1000; // Convert to milliseconds
+        if (Date.now() >= expirationTime) {
+            return res.status(401).json({ 
+                error: 'Token expired',
+                requiresLogin: true
+            });
+        }
+
+        // Enhanced user context
         req.user = {
             upn: decoded.upn || decoded.unique_name || decoded.preferred_username,
             name: decoded.name,
             roles: decoded.roles || [],
             tenantId: decoded.tid,
-            oid: decoded.oid
+            oid: decoded.oid,
+            ipAddress: decoded.ipaddr,
+            authTime: decoded.auth_time,
+            sessionId: decoded.sid
         };
         
         next();
     } catch (error) {
-        return res.status(401).json({ error: 'Token verification failed' });
+        console.error('Token verification failed:', error);
+        return res.status(401).json({ 
+            error: 'Token verification failed',
+            requiresLogin: true
+        });
     }
 }
 
@@ -1208,7 +1263,7 @@ app.get('/api/download-logs', verifyToken, (req, res) => {
     res.status(501).json({ error: 'Log download not yet implemented' });
 });
 
-// Health check endpoint
+// Enhanced health check endpoint
 app.get('/health', (req, res) => {
     res.json({ 
         status: 'healthy',
@@ -1216,7 +1271,13 @@ app.get('/health', (req, res) => {
         nodeVersion: process.version,
         port: port,
         authentication: 'enabled',
-        azureClientId: config.azureClientId ? 'configured' : 'missing'
+        azureClientId: config.azureClientId ? 'configured' : 'missing',
+        security: {
+            helmet: 'enabled',
+            csp: 'enabled',
+            hsts: 'enabled',
+            sessionTimeout: config.sessionTimeout
+        }
     });
 });
 

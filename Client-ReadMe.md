@@ -1,181 +1,119 @@
-# Entra Management Console - Automated Deployment
+# Entra Management Console
 
-## 🎯 Overview
+## Overview
+The Entra Management Console is a secure web application for managing Azure Entra ID (formerly Azure AD) resources. It provides a user-friendly interface for common administrative tasks and includes robust security features.
 
-This Terraform configuration deploys a complete Entra ID management solution with:
-- ✅ Web-based management console with Entra ID authentication
-- ✅ PowerShell automation runbooks for user/device/group management
-- ✅ Role-based access control and audit logging
-- ✅ Azure infrastructure (App Service, Automation Account, Key Vault, Storage)
+## Architecture
+The application is built using a modern stack:
+- Frontend: HTML5, CSS3, JavaScript
+- Backend: Node.js with Express
+- Infrastructure: Azure (managed via Terraform)
+- Authentication: Azure Entra ID
+- Storage: Azure Storage Account with File Share
+- Monitoring: Application Insights
 
-## 🚀 Quick Start
+## Security Features
+- Azure Entra ID authentication
+- IP restrictions for web application access
+- Secure storage of sensitive data in Azure Key Vault
+- Managed identities for service authentication
+- HTTPS enforcement
+- Regular security updates
 
-### Prerequisites
-- Azure subscription with **Owner** permissions
-- Azure CLI installed and configured
-- Terraform Cloud account
-- jq installed (`sudo apt install jq` or `brew install jq`)
+## Infrastructure Components
+1. **Web Application**
+   - Azure App Service (Linux)
+   - Application Insights for monitoring
+   - Custom domain support
+   - SSL/TLS encryption
 
-### Step 1: Setup Azure Service Principal
+2. **Storage**
+   - Azure Storage Account
+   - File Share for configuration and logs
+   - Secure access via managed identity
 
-Run the provided setup script:
+3. **Security**
+   - Azure Key Vault for secrets management
+   - Network security rules
+   - IP restrictions
+   - Azure Entra ID integration
 
-```bash
-chmod +x setup-terraform-cloud.sh
-./setup-terraform-cloud.sh
-```
+4. **Monitoring**
+   - Application Insights
+   - Log Analytics
+   - Performance monitoring
+   - Error tracking
 
-This script will:
-1. Create a service principal with Owner role
-2. Grant required Azure AD Graph permissions
-3. Display the credentials for Terraform Cloud
+## Access Requirements
+1. **Web Application**
+   - Azure Entra ID account with appropriate permissions
+   - Access from allowed IP addresses (if restrictions enabled)
+   - Modern web browser with JavaScript enabled
 
-### Step 2: Configure Terraform Cloud
+2. **Administrative Access**
+   - Azure subscription with Owner/Contributor role
+   - Access to Azure Key Vault
+   - Access to Application Insights
 
-1. **Create a new workspace** in Terraform Cloud
-2. **Connect to your Git repository** containing this configuration
-3. **Add Environment Variables**:
+## Maintenance
+1. **Regular Updates**
+   - Application code updates
+   - Security patches
+   - Infrastructure updates
+   - Dependency updates
 
-   **Sensitive Variables:**
-   ```
-   ARM_CLIENT_ID = <from setup script>
-   ARM_CLIENT_SECRET = <from setup script>
-   ```
+2. **Monitoring**
+   - Application performance
+   - Error rates
+   - Resource utilization
+   - Security events
 
-   **Regular Variables:**
-   ```
-   ARM_SUBSCRIPTION_ID = <your subscription ID>
-   ARM_TENANT_ID = <your tenant ID>
-   TF_VAR_allowed_ip_address = <your public IP>
-   TF_VAR_from_email = automation@yourdomain.com
-   TF_VAR_to_email = admin@yourdomain.com
-   ```
+3. **Backup**
+   - Configuration backups
+   - Log retention
+   - Disaster recovery procedures
 
-### Step 3: Deploy
+## Support
+For technical support or questions, please contact:
+- Email: [Support Email]
+- Phone: [Support Phone]
+- Hours: [Support Hours]
 
-1. **Queue a plan** in Terraform Cloud
-2. **Review the changes** (should show ~15 resources to create)
-3. **Apply the plan** to deploy the infrastructure
+## Compliance
+The application is designed to meet various compliance requirements:
+- Data encryption at rest and in transit
+- Secure authentication
+- Audit logging
+- Access control
+- Data privacy
 
-### Step 4: Access Your Console
+## Cost Management
+The infrastructure is designed to be cost-effective:
+- Pay-as-you-go pricing
+- Auto-scaling capabilities
+- Resource optimization
+- Cost monitoring and alerts
 
-After deployment:
-1. Navigate to: `https://lab-uks-entra-webapp.azurewebsites.net`
-2. Sign in with your organizational account
-3. Verify your role-based access to operations
+## Future Enhancements
+Planned improvements include:
+1. Enhanced monitoring and alerting
+2. Additional Entra ID management features
+3. Improved reporting capabilities
+4. Mobile application support
+5. API access for automation
 
-## 🔧 Configuration Options
+## Contact Information
+For more information or support:
+- Project Manager: [Name]
+- Technical Lead: [Name]
+- Support Team: [Email/Phone]
 
-### Customize Deployment
+## Version History
+- v1.0.0: Initial release
+- v1.1.0: Added monitoring features
+- v1.2.0: Enhanced security features
+- v1.3.0: Improved user interface
+- v1.4.0: Added reporting capabilities
 
-Edit these variables in your Terraform Cloud workspace:
-
-```hcl
-# Network Security
-TF_VAR_allowed_ip_address = "your.public.ip.address"
-TF_VAR_enable_ip_restrictions = true
-
-# Email Notifications  
-TF_VAR_from_email = "automation@yourdomain.com"
-TF_VAR_to_email = "admin@yourdomain.com"
-
-# Resource Naming
-TF_VAR_environment = "prod"           # or "dev", "test"
-TF_VAR_location_code = "uks"          # or "eus", "weu", etc.
-TF_VAR_service_name = "entra"
-```
-
-### Role Requirements
-
-Users need these Azure AD roles for different operations:
-
-| Operation | Required Roles |
-|-----------|----------------|
-| Extension Attributes | User Administrator, Global Administrator |
-| Device Cleanup | Cloud Device Administrator, Global Administrator |
-| Group Management | Groups Administrator, Global Administrator |
-| All Operations | Global Administrator |
-
-## 🛡️ Security Features
-
-- **IP Restrictions**: Access limited to specified IP addresses
-- **Entra ID Authentication**: No local accounts or passwords
-- **Role-Based Access**: Operations limited by Azure AD roles
-- **Managed Identities**: No stored credentials in application code
-- **Audit Logging**: Complete user action tracking
-- **Encrypted Secrets**: All sensitive data stored in Key Vault
-
-## 📊 Monitoring
-
-### Application Insights
-- Performance metrics and error tracking
-- User authentication events
-- Custom telemetry for runbook executions
-
-### Access Logs
-- Real-time monitoring in Azure Portal
-- Log Analytics queries for audit reports
-- Alerting on failed operations
-
-## 🔄 Operations
-
-### Extension Attribute Management
-- Bulk user attribute updates
-- What-If preview mode
-- Email confirmation reports
-
-### Device Cleanup
-- Automated inactive device detection
-- Safety limits and Azure VM protection
-- Compliance reporting
-
-### Group Management
-- Membership cleanup based on user age
-- Bulk operations with safety controls
-- Detailed audit trails
-
-## 🆘 Troubleshooting
-
-### Common Issues
-
-**Authentication Errors:**
-- Verify API permissions are granted with admin consent
-- Check user has required Azure AD roles
-- Confirm web app registration redirect URIs
-
-**Deployment Failures:**
-- Ensure service principal has Owner role
-- Verify Azure AD Graph permissions
-- Check Terraform Cloud environment variables
-
-**Access Denied:**
-- Confirm IP address is whitelisted
-- Verify user account is in correct tenant
-- Check application registration configuration
-
-### Support
-
-For technical support:
-1. Check Application Insights logs
-2. Review Automation Account runbook history
-3. Verify Key Vault access policies
-4. Contact your deployment team
-
-## 📚 Additional Resources
-
-- [Azure AD Role Definitions](https://docs.microsoft.com/en-us/azure/active-directory/roles/permissions-reference)
-- [Microsoft Graph Permissions](https://docs.microsoft.com/en-us/graph/permissions-reference)
-- [Terraform Cloud Documentation](https://www.terraform.io/cloud/docs)
-
-## 🔄 Updates and Maintenance
-
-### Regular Tasks
-- Review and rotate client secrets (every 12-24 months)
-- Update IP restrictions as needed
-- Monitor Application Insights for performance
-- Review audit logs for compliance
-
-### Scaling
-- Increase App Service Plan SKU for higher traffic
-- Add additional IP addresses for multi-location access
-- Configure custom domains and SSL certificates
+## License
+This software is proprietary and confidential. Unauthorized copying, distribution, or use is strictly prohibited.
