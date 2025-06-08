@@ -69,6 +69,88 @@ module "storage" {
   tags                    = local.tags_all
 }
 
+# Azure Automation Account
+resource "azurerm_automation_account" "main" {
+  name                = "${var.environment}-${var.location_code}-entra-automation"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  sku_name           = "Basic"
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  tags = local.tags_all
+}
+
+# Automation Runbook
+resource "azurerm_automation_runbook" "extension_attribute_management" {
+  name                    = "Manage-ExtensionAttributes"
+  location                = azurerm_resource_group.main.location
+  resource_group_name     = azurerm_resource_group.main.name
+  automation_account_name = azurerm_automation_account.main.name
+  log_verbose             = true
+  log_progress            = true
+  description             = "Enhanced Entra ID Extension Attribute Management with Role-Based Access Control"
+  runbook_type           = "PowerShell"
+
+  content = file("../../scripts/extension-attribute-management.ps1")
+
+  tags = local.tags_all
+}
+
+# Automation Variables for the runbook
+resource "azurerm_automation_variable_string" "resource_group_name" {
+  name                    = "ResourceGroupName"
+  resource_group_name     = azurerm_resource_group.main.name
+  automation_account_name = azurerm_automation_account.main.name
+  value                   = azurerm_resource_group.main.name
+}
+
+resource "azurerm_automation_variable_string" "storage_account_name" {
+  name                    = "StorageAccountName"
+  resource_group_name     = azurerm_resource_group.main.name
+  automation_account_name = azurerm_automation_account.main.name
+  value                   = module.storage.storage_account_name
+}
+
+resource "azurerm_automation_variable_string" "file_share_name" {
+  name                    = "FileShareName"
+  resource_group_name     = azurerm_resource_group.main.name
+  automation_account_name = azurerm_automation_account.main.name
+  value                   = var.file_share_name
+}
+
+resource "azurerm_automation_variable_string" "key_vault_name" {
+  name                    = "KeyVaultName"
+  resource_group_name     = azurerm_resource_group.main.name
+  automation_account_name = azurerm_automation_account.main.name
+  value                   = azurerm_key_vault.main.name
+}
+
+resource "azurerm_automation_variable_string" "azure_ad_client_id" {
+  name                    = "AzureADClientId"
+  resource_group_name     = azurerm_resource_group.main.name
+  automation_account_name = azurerm_automation_account.main.name
+  value                   = azuread_application.web_app.client_id
+}
+
+resource "azurerm_automation_variable_string" "azure_ad_tenant_id" {
+  name                    = "AzureADTenantId"
+  resource_group_name     = azurerm_resource_group.main.name
+  automation_account_name = azurerm_automation_account.main.name
+  value                   = data.azurerm_client_config.current.tenant_id
+}
+
+# Sensitive automation variable for client secret
+resource "azurerm_automation_variable_string" "azure_ad_client_secret" {
+  name                    = "AzureADClientSecret"
+  resource_group_name     = azurerm_resource_group.main.name
+  automation_account_name = azurerm_automation_account.main.name
+  value                   = local.web_app_client_secret
+  encrypted              = true
+}
+
 # Web App Module
 module "webapp" {
   source = "../../modules/webapp"
@@ -82,7 +164,7 @@ module "webapp" {
   web_app_client_secret     = local.web_app_client_secret
   tenant_id                 = data.azurerm_client_config.current.tenant_id
   subscription_id           = data.azurerm_client_config.current.subscription_id
-  automation_account_name   = null  # Not using automation account in current setup
+  automation_account_name   = azurerm_automation_account.main.name  # Now using actual automation account
   key_vault_uri            = azurerm_key_vault.main.vault_uri
   enable_ip_restrictions    = var.enable_ip_restrictions
   allowed_ip_address        = var.allowed_ip_address
@@ -139,6 +221,17 @@ resource "azurerm_key_vault_access_policy" "webapp" {
   ]
 }
 
+resource "azurerm_key_vault_access_policy" "automation" {
+  key_vault_id = azurerm_key_vault.main.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_automation_account.main.identity[0].principal_id
+
+  secret_permissions = [
+    "Get",
+    "List"
+  ]
+}
+
 # Store sensitive values in Key Vault
 resource "azurerm_key_vault_secret" "storage_key" {
   name         = "storage-account-key"
@@ -150,4 +243,17 @@ resource "azurerm_key_vault_secret" "webapp_client_secret" {
   name         = "webapp-client-secret"
   value        = local.web_app_client_secret
   key_vault_id = azurerm_key_vault.main.id
+}
+
+# Role Assignments for Automation Account
+resource "azurerm_role_assignment" "automation_storage_contributor" {
+  scope                = module.storage.storage_account_id
+  role_definition_name = "Storage File Data SMB Share Contributor"
+  principal_id         = azurerm_automation_account.main.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "automation_reader" {
+  scope                = azurerm_resource_group.main.id
+  role_definition_name = "Reader"
+  principal_id         = azurerm_automation_account.main.identity[0].principal_id
 } 

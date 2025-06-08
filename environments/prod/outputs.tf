@@ -55,4 +55,19 @@ output "log_analytics_workspace_id" {
 output "log_analytics_workspace_name" {
   description = "Name of the Log Analytics workspace"
   value       = azurerm_log_analytics_workspace.main.name
+}
+
+output "automation_account_name" {
+  description = "Name of the Azure Automation Account"
+  value       = azurerm_automation_account.main.name
+}
+
+output "automation_account_id" {
+  description = "ID of the Azure Automation Account"
+  value       = azurerm_automation_account.main.id
+}
+
+output "automation_runbook_name" {
+  description = "Name of the automation runbook"
+  value       = azurerm_automation_runbook.extension_attribute_management.name
 } 
