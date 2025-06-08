@@ -29,8 +29,21 @@ resource "null_resource" "package_app" {
   provisioner "local-exec" {
     command = <<-EOT
       cd ${path.module}/../../webapp
+      # Clean up any existing zip
+      rm -f ../webapp.zip
+      # Install production dependencies
       npm install --production
+      # Create a temporary directory for packaging
+      mkdir -p ../temp_deploy
+      # Copy all files to temp directory
+      cp -r * ../temp_deploy/
+      # Move to temp directory
+      cd ../temp_deploy
+      # Create the zip file
       zip -r ../webapp.zip .
+      # Clean up
+      cd ..
+      rm -rf temp_deploy
     EOT
   }
 }
@@ -131,6 +144,12 @@ resource "azurerm_linux_web_app" "main" {
     "NODE_ENV"                  = "production"
     "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.main.instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.main.connection_string
+    "WEBSITE_NODE_DEFAULT_VERSION" = "~18"
+    "WEBSITE_RUN_FROM_PACKAGE"    = "1"
+    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
+    "WEBSITE_WEBSOCKET_ENABLED" = "1"
+    "WEBSITE_HTTPLOGGING_RETENTION_DAYS" = "7"
+    "WEBSITE_HTTPLOGGING_ENABLED" = "1"
   }
 
   auth_settings {
