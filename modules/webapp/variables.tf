@@ -84,6 +84,22 @@ variable "app_insights_connection_string" {
   default     = null
 }
 
+variable "subscription_id" {
+  description = "Azure subscription ID"
+  type        = string
+}
+
+variable "automation_account_name" {
+  description = "Name of the Azure Automation Account (optional)"
+  type        = string
+  default     = null
+}
+
+variable "key_vault_uri" {
+  description = "URI of the Key Vault"
+  type        = string
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

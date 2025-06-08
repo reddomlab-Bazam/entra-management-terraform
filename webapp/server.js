@@ -1143,9 +1143,10 @@ app.post('/api/execute-runbook', verifyToken, async (req, res) => {
         }
 
         if (!automationClient) {
-            return res.status(500).json({
+            return res.status(503).json({
                 success: false,
-                error: 'Azure Automation client not initialized'
+                error: 'Azure Automation is not configured for this deployment. Runbook execution is not available.',
+                details: 'This feature requires an Azure Automation Account to be configured.'
             });
         }
 
@@ -1189,7 +1190,10 @@ app.post('/api/execute-runbook', verifyToken, async (req, res) => {
 app.get('/api/job-status/:jobId', verifyToken, async (req, res) => {
     try {
         if (!automationClient) {
-            return res.status(500).json({ error: 'Azure Automation client not initialized' });
+            return res.status(503).json({ 
+                error: 'Azure Automation is not configured',
+                details: 'Job status monitoring requires Azure Automation Account configuration'
+            });
         }
 
         const { jobId } = req.params;
@@ -1287,4 +1291,9 @@ app.listen(port, () => {
     console.log(`Node.js version: ${process.version}`);
     console.log(`Azure Client ID: ${config.azureClientId ? 'Configured' : 'Missing'}`);
     console.log(`Azure Tenant ID: ${config.azureTenantId ? 'Configured' : 'Missing'}`);
+    console.log(`Azure Subscription ID: ${config.subscriptionId ? 'Configured' : 'Missing'}`);
+    console.log(`Resource Group: ${config.resourceGroupName ? config.resourceGroupName : 'Missing'}`);
+    console.log(`Key Vault URI: ${config.keyVaultUri ? 'Configured' : 'Missing'}`);
+    console.log(`Automation Account: ${config.automationAccountName ? config.automationAccountName : 'Not configured (runbook features disabled)'}`);
+    console.log(`Automation Client: ${automationClient ? 'Initialized' : 'Not available'}`);
 });

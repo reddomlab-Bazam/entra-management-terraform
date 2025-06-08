@@ -46,6 +46,12 @@ resource "azurerm_linux_web_app" "main" {
     "AZURE_CLIENT_ID"            = var.web_app_client_id
     "AZURE_CLIENT_SECRET"        = var.web_app_client_secret
     "AZURE_TENANT_ID"           = var.tenant_id
+    "AZURE_SUBSCRIPTION_ID"      = var.subscription_id
+    "RESOURCE_GROUP_NAME"        = var.resource_group_name
+    "AUTOMATION_ACCOUNT_NAME"    = var.automation_account_name
+    "KEY_VAULT_URI"             = var.key_vault_uri
+    "SESSION_TIMEOUT_MINUTES"    = "60"
+    "NODE_ENV"                  = "production"
     "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.main.instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.main.connection_string
   }

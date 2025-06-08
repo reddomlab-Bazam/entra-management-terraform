@@ -81,6 +81,9 @@ module "webapp" {
   web_app_client_id         = azuread_application.web_app.client_id
   web_app_client_secret     = local.web_app_client_secret
   tenant_id                 = data.azurerm_client_config.current.tenant_id
+  subscription_id           = data.azurerm_client_config.current.subscription_id
+  automation_account_name   = null  # Not using automation account in current setup
+  key_vault_uri            = azurerm_key_vault.main.vault_uri
   enable_ip_restrictions    = var.enable_ip_restrictions
   allowed_ip_address        = var.allowed_ip_address
   application_insights_type = var.application_insights_type
