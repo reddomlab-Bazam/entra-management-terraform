@@ -142,4 +142,20 @@ resource "null_resource" "deploy_app" {
         --src ${path.module}/../../webapp.zip
     EOT
   }
-} 
+}
+
+# Example: Assign Microsoft Graph API permissions to the Azure AD application
+# (This block should be in your Azure AD application resource, but shown here for reference)
+# resource "azuread_application" "web_app" {
+#   required_resource_access {
+#     resource_app_id = "00000003-0000-0000-c000-000000000000" # Microsoft Graph
+#     resource_access {
+#       id   = "df021288-bdef-4463-88db-98f22de89214" # Directory.Read.All (Application)
+#       type = "Role"
+#     }
+#     resource_access {
+#       id   = "19dbc75e-c2e2-444c-a770-ec69d8559fc7" # User.Read.All (Application)
+#       type = "Role"
+#     }
+#   }
+# } 

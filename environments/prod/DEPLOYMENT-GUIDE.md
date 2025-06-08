@@ -131,3 +131,22 @@ For issues or questions, refer to:
 ---
 
 **Important**: Keep your `terraform.tfvars` file secure as it may contain sensitive configuration values. 
+
+```hcl
+resource "azuread_application" "web_app" {
+  # ... other config ...
+  required_resource_access {
+    resource_app_id = "00000003-0000-0000-c000-000000000000" # Microsoft Graph
+
+    resource_access {
+      id   = "df021288-bdef-4463-88db-98f22de89214" # Directory.Read.All (Application)
+      type = "Role"
+    }
+    resource_access {
+      id   = "19dbc75e-c2e2-444c-a770-ec69d8559fc7" # User.Read.All (Application)
+      type = "Role"
+    }
+    # Add more permissions as needed
+  }
+}
+``` 

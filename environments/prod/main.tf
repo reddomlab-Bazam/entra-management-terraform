@@ -274,4 +274,27 @@ resource "azurerm_role_assignment" "automation_reader" {
   scope                = azurerm_resource_group.main.id
   role_definition_name = "Reader"
   principal_id         = azurerm_automation_account.main.identity[0].principal_id
-} 
+}
+
+resource "azurerm_automation_module" "microsoft_graph" {
+  name                    = "Microsoft.Graph"
+  resource_group_name     = azurerm_resource_group.main.name
+  automation_account_name = azurerm_automation_account.main.name
+  module_link {
+    uri = "https://www.powershellgallery.com/api/v2/package/Microsoft.Graph/2.12.0"
+  }
+}
+
+# -----------------------------------------------------------------------------
+# NOTE: After Terraform applies, a Global Admin must grant admin consent for the
+# Microsoft Graph API permissions assigned to the Azure AD Application. This can
+# be done in the Azure Portal or using the Microsoft Graph PowerShell module.
+# Example PowerShell script:
+#
+# Install-Module Microsoft.Graph -Scope CurrentUser -Force
+# Connect-MgGraph -Scopes "Application.ReadWrite.All", "Directory.ReadWrite.All"
+# $AppId = "<your-app-client-id>"
+# Start-Process "https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/CallAnAPI/appId/$AppId/isMSAApp/"
+#
+# Then click "Grant admin consent" in the portal UI.
+# ----------------------------------------------------------------------------- 
