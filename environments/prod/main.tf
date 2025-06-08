@@ -56,9 +56,9 @@ resource "azurerm_log_analytics_workspace" "main" {
   tags = local.tags_all
 }
 
-# Storage Module
+# Storage Module  
 module "storage" {
-  source = "../../modules/storage"
+  source = "./modules/storage"
 
   resource_group_name      = azurerm_resource_group.main.name
   location                 = azurerm_resource_group.main.location
@@ -94,7 +94,7 @@ resource "azurerm_automation_runbook" "extension_attribute_management" {
   description             = "Enhanced Entra ID Extension Attribute Management with Role-Based Access Control"
   runbook_type           = "PowerShell"
 
-  content = file("../../scripts/extension-attribute-management.ps1")
+  content = file("./scripts/extension-attribute-management.ps1")
 
   tags = local.tags_all
 }
@@ -153,7 +153,7 @@ resource "azurerm_automation_variable_string" "azure_ad_client_secret" {
 
 # Web App Module
 module "webapp" {
-  source = "../../modules/webapp"
+  source = "./modules/webapp"
 
   resource_group_name        = azurerm_resource_group.main.name
   location                   = azurerm_resource_group.main.location
