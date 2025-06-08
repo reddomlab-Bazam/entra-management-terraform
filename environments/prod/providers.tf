@@ -20,12 +20,10 @@ terraform {
     }
   }
 
-  cloud {
-    # This will be configured in the Terraform Cloud workspace
-    # organization = "your-org-name"
-    # workspaces {
-    #   name = "entra-management-prod"
-    # }
+  # Temporarily using local backend for immediate fixes
+  # Switch back to cloud backend after applying urgent changes
+  backend "local" {
+    path = "terraform.tfstate"
   }
 }
 
