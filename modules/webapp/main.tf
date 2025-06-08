@@ -20,78 +20,6 @@ resource "azurerm_storage_container" "deployment" {
   container_access_type = "private"
 }
 
-# Create deployment package
-resource "null_resource" "package_app" {
-  triggers = {
-    always_run = timestamp()
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      cd ${path.module}/../../webapp
-      # Clean up any existing zip
-      rm -f ../webapp.zip
-      # Install production dependencies
-      npm install --production
-      # Create a temporary directory for packaging
-      mkdir -p ../temp_deploy
-      # Copy all files to temp directory
-      cp -r * ../temp_deploy/
-      # Move to temp directory
-      cd ../temp_deploy
-      # Create the zip file
-      zip -r ../webapp.zip .
-      # Clean up
-      cd ..
-      rm -rf temp_deploy
-    EOT
-  }
-}
-
-# Upload deployment package
-resource "azurerm_storage_blob" "deployment_package" {
-  name                   = "webapp.zip"
-  storage_account_name   = azurerm_storage_account.deployment.name
-  storage_container_name = azurerm_storage_container.deployment.name
-  type                  = "Block"
-  source                = "${path.module}/../../webapp.zip"
-  depends_on            = [null_resource.package_app]
-}
-
-# Generate SAS token for deployment package
-data "azurerm_storage_account_sas" "deployment" {
-  connection_string = azurerm_storage_account.deployment.primary_connection_string
-  https_only        = true
-  signed_version    = "2019-12-12"
-
-  resource_types {
-    service   = false
-    container = false
-    object    = true
-  }
-
-  services {
-    blob  = true
-    queue = false
-    table = false
-    file  = false
-  }
-
-  start  = timestamp()
-  expiry = timeadd(timestamp(), "24h")
-
-  permissions {
-    read    = true
-    write   = false
-    delete  = false
-    list    = false
-    add     = false
-    create  = false
-    update  = false
-    process = false
-  }
-}
-
 # App Service Plan
 resource "azurerm_service_plan" "main" {
   name                = var.app_service_plan_name
@@ -131,7 +59,6 @@ resource "azurerm_linux_web_app" "main" {
 
   app_settings = {
     "WEBSITE_NODE_DEFAULT_VERSION" = "~18"
-    "WEBSITE_RUN_FROM_PACKAGE"    = "https://${azurerm_storage_account.deployment.name}.blob.core.windows.net/${azurerm_storage_container.deployment.name}/${azurerm_storage_blob.deployment_package.name}${data.azurerm_storage_account_sas.deployment.sas}"
     "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
     "AZURE_CLIENT_ID"            = var.web_app_client_id
     "AZURE_CLIENT_SECRET"        = var.web_app_client_secret
@@ -144,12 +71,12 @@ resource "azurerm_linux_web_app" "main" {
     "NODE_ENV"                  = "production"
     "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.main.instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.main.connection_string
-    "WEBSITE_NODE_DEFAULT_VERSION" = "~18"
-    "WEBSITE_RUN_FROM_PACKAGE"    = "1"
-    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
     "WEBSITE_WEBSOCKET_ENABLED" = "1"
     "WEBSITE_HTTPLOGGING_RETENTION_DAYS" = "7"
     "WEBSITE_HTTPLOGGING_ENABLED" = "1"
+    "WEBSITE_RUN_FROM_PACKAGE" = "1"
+    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
+    "WEBSITE_NODE_DEFAULT_VERSION" = "~18"
   }
 
   auth_settings {
@@ -178,4 +105,41 @@ resource "azurerm_application_insights" "main" {
   workspace_id        = var.log_analytics_workspace_id
 
   tags = var.tags
+}
+
+# Create deployment package
+resource "null_resource" "package_app" {
+  triggers = {
+    always_run = timestamp()
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      cd ${path.module}/../../webapp
+      # Clean up any existing zip
+      rm -f ../webapp.zip
+      # Install production dependencies
+      npm install --production
+      # Create the zip file
+      zip -r ../webapp.zip .
+    EOT
+  }
+}
+
+# Deploy the application using Azure CLI
+resource "null_resource" "deploy_app" {
+  depends_on = [null_resource.package_app, azurerm_linux_web_app.main]
+
+  triggers = {
+    always_run = timestamp()
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      az webapp deployment source config-zip \
+        --resource-group ${var.resource_group_name} \
+        --name ${var.web_app_name} \
+        --src ${path.module}/../../webapp.zip
+    EOT
+  }
 } 
