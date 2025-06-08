@@ -71,6 +71,18 @@ variable "log_analytics_workspace_id" {
   type        = string
 }
 
+variable "app_insights_key" {
+  description = "Application Insights instrumentation key"
+  type        = string
+  default     = null
+}
+
+variable "app_insights_connection_string" {
+  description = "Application Insights connection string"
+  type        = string
+  default     = null
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

@@ -14,15 +14,13 @@ resource "azurerm_storage_account" "main" {
   # Enable blob encryption
   enable_https_traffic_only = true
   
-  # Enable blob versioning
   blob_properties {
     versioning_enabled = true
-  }
-  
-  # Enable soft delete for blobs
-  blob_properties {
     delete_retention_policy {
-      days = 30
+      days = 7
+    }
+    container_delete_retention_policy {
+      days = 7
     }
   }
   
@@ -71,5 +69,5 @@ resource "azurerm_storage_share_directory" "templates" {
 resource "azurerm_storage_container" "webfiles" {
   name                  = "webfiles"
   storage_account_name  = azurerm_storage_account.main.name
-  container_access_type = "blob"
+  container_access_type = "private"
 } 
