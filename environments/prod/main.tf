@@ -194,16 +194,34 @@ resource "azurerm_key_vault" "main" {
   tags = local.tags_all
 }
 
-# Key Vault Access Policies
-resource "azurerm_key_vault_access_policy" "current_user" {
+# Access policy for the Terraform Cloud service principal (bootstrap permissions)
+resource "azurerm_key_vault_access_policy" "terraform_cloud" {
   key_vault_id = azurerm_key_vault.main.id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = data.azurerm_client_config.current.object_id
+
+  # This data source automatically refers to the identity running Terraform (the service principal)
+  tenant_id = data.azurerm_client_config.current.tenant_id
+  object_id = data.azurerm_client_config.current.object_id
 
   secret_permissions = [
     "Get",
     "List",
     "Set",
+    "Delete",
+    "Purge",
+    "Recover"
+  ]
+  key_permissions = [
+    "Get",
+    "List",
+    "Create",
+    "Delete",
+    "Purge",
+    "Recover"
+  ]
+  certificate_permissions = [
+    "Get",
+    "List",
+    "Create",
     "Delete",
     "Purge",
     "Recover"
