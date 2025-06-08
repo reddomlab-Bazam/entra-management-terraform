@@ -20,11 +20,10 @@ terraform {
     }
   }
 
-  # Terraform Cloud - VCS-driven workflow required for modules
   cloud {
     organization = "reddomelabproject"
     workspaces {
-      name = "entra-management-prod"
+      name = "entra-management-terraform"
     }
   }
 }
@@ -40,4 +39,4 @@ provider "azurerm" {
 
 provider "azuread" {
   # Configuration options
-} 
+}
