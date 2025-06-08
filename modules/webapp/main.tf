@@ -1,6 +1,7 @@
 # =============================================================================
 # WEBAPP MODULE - Azure Web App Configuration
 # =============================================================================
+# Test workflow trigger - This comment will be removed after testing
 
 # Storage Account for deployment package
 resource "azurerm_storage_account" "deployment" {
