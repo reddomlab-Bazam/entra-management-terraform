@@ -432,7 +432,12 @@ resource "azurerm_service_plan" "main" {
   tags = local.tags_all
 }
 
-# Linux Web App
+# =============================================================================
+# UPDATE YOUR LAB-main.tf - Linux Web App Section
+# =============================================================================
+
+# Replace the existing azurerm_linux_web_app resource with this updated version:
+
 resource "azurerm_linux_web_app" "main" {
   name                = var.web_app_name
   resource_group_name = azurerm_resource_group.main.name
@@ -444,7 +449,7 @@ resource "azurerm_linux_web_app" "main" {
     always_on = false
     
     application_stack {
-      node_version = "18-lts"
+      node_version = "20-lts"  # UPDATED: Changed from "18-lts" to "20-lts"
     }
     
     # Security: Block all except your IP if enabled
@@ -471,6 +476,7 @@ resource "azurerm_linux_web_app" "main" {
     minimum_tls_version = var.minimum_tls_version
   }
 
+  # UPDATED: Enhanced app settings for production security
   app_settings = {
     "AUTOMATION_ACCOUNT_NAME"               = azurerm_automation_account.main.name
     "RESOURCE_GROUP_NAME"                   = azurerm_resource_group.main.name
@@ -482,7 +488,20 @@ resource "azurerm_linux_web_app" "main" {
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.main.connection_string
     "AZURE_CLIENT_ID"                       = azuread_application.web_app.client_id
     "AZURE_TENANT_ID"                       = data.azurerm_client_config.current.tenant_id
+    
+    # PRODUCTION SECURITY SETTINGS (NEW)
     "NODE_ENV"                              = "production"
+    "SECURITY_HEADERS"                      = "true"
+    "AUDIT_LOGGING"                         = "true"
+    "ALLOWED_ORIGINS"                       = "https://${var.web_app_name}.azurewebsites.net"
+    "NPM_CONFIG_PRODUCTION"                 = "true"
+    "WEBSITE_NODE_DEFAULT_VERSION"          = "~20"
+    "SCM_DO_BUILD_DURING_DEPLOYMENT"        = "true"
+    
+    # SECURITY ENHANCEMENT SETTINGS
+    "WEBSITE_HTTPLOGGING_RETENTION_DAYS"    = "7"
+    "WEBSITES_ENABLE_APP_SERVICE_STORAGE"   = "false"
+    "WEBSITE_DYNAMIC_CACHE"                 = "0"
   }
 
   identity {
