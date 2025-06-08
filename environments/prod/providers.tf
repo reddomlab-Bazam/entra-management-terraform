@@ -27,11 +27,6 @@ terraform {
       name = "entra-management-prod"
     }
   }
-  
-  # Uncomment below and comment cloud block above to use local backend
-  # backend "local" {
-  #   path = "terraform.tfstate"
-  # }
 }
 
 provider "azurerm" {
