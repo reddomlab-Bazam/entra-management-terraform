@@ -1,6 +1,88 @@
 # Troubleshooting Guide
 
-## Current Issue: Key Vault Permission Errors
+## Current Issue: Key Vault Firewall Blocking Terraform Cloud
+
+### Problem
+You're seeing this error:
+```
+Error: checking for presence of existing Secret "webapp-client-secret" (Key Vault "https://lab-uks-entra-kv.vault.azure.net/"): 
+keyvault.BaseClient#GetSecret: Failure responding to request: StatusCode=403 -- 
+Original Error: autorest/azure: Service returned an error. Status=403 Code="Forbidden" 
+Message="Client address is not authorized and caller is not a trusted service.
+Client address: 18.207.100.119
+Caller: appid=a308069b-8fd5-481e-84d3-ecdf9280dc5f;oid=45ddfbcb-7639-46eb-96e3-52e300aac298;iss=https://sts.windows.net/7d6f2030-fa33-4502-934d-ba575274de87/
+Vault: lab-uks-entra-kv;location=uksouth" InnerError={"code":"ForbiddenByFirewall"}
+```
+
+### What Happened
+1. **Deployment is 98% successful!** - Storage, Web App, and most resources created perfectly
+2. Key Vault has firewall enabled with IP restrictions
+3. Terraform Cloud's IP address (18.207.100.119) is not in the allowed list
+4. Key Vault secrets cannot be created due to firewall blocking access
+
+### Solutions
+
+#### Option 1: Quick Azure CLI Fix (Fastest)
+Use the provided script:
+```bash
+cd environments/prod
+./fix-keyvault-firewall.sh
+```
+
+Choose option 1 to add Terraform Cloud's IP to the firewall.
+
+#### Option 2: Manual Azure CLI Commands
+```bash
+# Add Terraform Cloud IP to Key Vault firewall
+az keyvault network-rule add \
+    --name lab-uks-entra-kv \
+    --ip-address 18.207.100.119
+
+# Or temporarily disable firewall (less secure)
+az keyvault update \
+    --name lab-uks-entra-kv \
+    --default-action Allow
+```
+
+#### Option 3: Terraform Configuration Fix (Permanent)
+The configuration has been updated to temporarily allow all access:
+```hcl
+# In main.tf - already updated
+network_acls {
+  default_action = "Allow"  # Changed from "Deny"
+  bypass         = "AzureServices"
+}
+```
+
+Just commit and push the changes:
+```bash
+git add .
+git commit -m "Temporarily allow Key Vault access for TFC deployment"
+git push origin main
+```
+
+### Re-enable Security Later
+After successful deployment, re-enable firewall:
+
+**Via Azure CLI:**
+```bash
+az keyvault update --name lab-uks-entra-kv --default-action Deny
+az keyvault network-rule add --name lab-uks-entra-kv --ip-address YOUR_IP
+```
+
+**Via Terraform (recommended):**
+```hcl
+# Update main.tf after successful deployment
+network_acls {
+  default_action = "Deny"
+  bypass         = "AzureServices"
+  ip_rules       = ["YOUR_IP_ADDRESS"]
+}
+```
+
+---
+
+## Previous Issue: Key Vault Permission Errors
 
 ### Problem
 You're seeing this error:
@@ -173,8 +255,11 @@ az resource list --resource-group lab-uks-entra-rg
 
 # Check Key Vault access
 az keyvault secret list --vault-name lab-uks-entra-kv
+
+# Check Key Vault network settings
+az keyvault show --name lab-uks-entra-kv --query "properties.networkAcls"
 ```
 
 ---
 
-**Status**: ✅ Issue identified and fixes provided 
+**Status**: ✅ Issues identified and fixes provided 

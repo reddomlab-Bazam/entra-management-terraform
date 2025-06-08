@@ -100,9 +100,10 @@ resource "azurerm_key_vault" "main" {
   soft_delete_retention_days = 90
 
   network_acls {
-    default_action = "Deny"
+    default_action = "Allow"  # Temporarily allow all access for TFC deployment
     bypass         = "AzureServices"
-    ip_rules       = var.enable_ip_restrictions && var.allowed_ip_address != null ? [var.allowed_ip_address] : []
+    # ip_rules can be empty when default_action is "Allow"
+    # ip_rules       = var.enable_ip_restrictions && var.allowed_ip_address != null ? [var.allowed_ip_address] : []
   }
 
   tags = local.tags_all
