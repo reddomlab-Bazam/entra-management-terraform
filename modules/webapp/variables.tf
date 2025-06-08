@@ -104,4 +104,10 @@ variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
   default     = {}
+}
+
+variable "deployment_package_path" {
+  description = "Path to the webapp directory containing the application code"
+  type        = string
+  default     = "../../webapp"
 } 
