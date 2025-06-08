@@ -20,11 +20,18 @@ terraform {
     }
   }
 
-  # Temporarily using local backend for immediate fixes
-  # Switch back to cloud backend after applying urgent changes
-  backend "local" {
-    path = "terraform.tfstate"
+  # Terraform Cloud - VCS-driven workflow required for modules
+  cloud {
+    organization = "reddomelabproject"
+    workspaces {
+      name = "entra-management-prod"
+    }
   }
+  
+  # Uncomment below and comment cloud block above to use local backend
+  # backend "local" {
+  #   path = "terraform.tfstate"
+  # }
 }
 
 provider "azurerm" {
