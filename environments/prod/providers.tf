@@ -14,14 +14,18 @@ terraform {
       source  = "hashicorp/azuread"
       version = "~> 2.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 
-  backend "azurerm" {
-    # Backend configuration will be provided during terraform init
-    # resource_group_name  = "terraform-state-rg"
-    # storage_account_name = "tfstate${random_string.suffix.result}"
-    # container_name       = "tfstate"
-    # key                  = "entra-management-prod.terraform.tfstate"
+  cloud {
+    # This will be configured in the Terraform Cloud workspace
+    # organization = "your-org-name"
+    # workspaces {
+    #   name = "entra-management-prod"
+    # }
   }
 }
 

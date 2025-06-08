@@ -11,8 +11,8 @@ resource "azurerm_storage_account" "main" {
   account_replication_type = var.storage_replication_type
   min_tls_version         = "TLS1_2"
   
-  # Enable blob encryption
-  enable_https_traffic_only = true
+  # Use the new property instead of deprecated one
+  https_traffic_only_enabled = true
   
   blob_properties {
     versioning_enabled = true

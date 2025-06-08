@@ -1,0 +1,43 @@
+# =============================================================================
+# TERRAFORM CLOUD ENVIRONMENT VARIABLES EXAMPLE
+# =============================================================================
+# Copy this file to terraform.tfvars and customize for your environment
+# DO NOT commit terraform.tfvars to git - it contains sensitive information
+
+# Environment configuration
+environment = "lab"
+location = "uksouth" 
+location_code = "uks"
+
+# Resource naming - update these to match your existing infrastructure
+resource_group_name = "lab-uks-entra-rg"
+storage_account_name = "labentraautomation"
+file_share_name = "entra-management"
+web_app_name = "lab-uks-entra-webapp"
+app_service_plan_name = "lab-uks-entra-webapp-plan"
+key_vault_name = "lab-uks-entra-kv"
+
+# Storage configuration
+file_share_quota_gb = 5
+storage_replication_type = "LRS"
+
+# App Service configuration
+app_service_plan_sku = "P1v2"
+
+# Security configuration
+enable_ip_restrictions = false
+# allowed_ip_address = "YOUR_IP_ADDRESS"  # Set as TFC environment variable
+
+# Application Insights configuration
+application_insights_type = "web"
+
+# Additional tags
+tags = {
+  Owner = "IT Team"
+  Purpose = "Entra ID Management"
+  ManagedBy = "Terraform Cloud"
+}
+
+# Sensitive variables - SET THESE AS ENVIRONMENT VARIABLES IN TERRAFORM CLOUD:
+# TF_VAR_web_app_client_secret = "your-client-secret"
+# TF_VAR_allowed_ip_address = "your-ip-address" (if using IP restrictions) 

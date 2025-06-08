@@ -27,12 +27,15 @@ resource "azurerm_linux_web_app" "main" {
 
     always_on = true
 
-    ip_restriction {
-      virtual_network_subnet_id = null
-      action                    = "Allow"
-      priority                  = 100
-      name                      = "Allow specific IP"
-      ip_address                = var.allowed_ip_address
+    # Only apply IP restrictions if enabled and IP address is provided
+    dynamic "ip_restriction" {
+      for_each = var.enable_ip_restrictions && var.allowed_ip_address != null ? [1] : []
+      content {
+        action     = "Allow"
+        priority   = 100
+        name       = "Allow specific IP"
+        ip_address = var.allowed_ip_address
+      }
     }
   }
 

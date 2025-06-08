@@ -58,6 +58,7 @@ variable "enable_ip_restrictions" {
 variable "allowed_ip_address" {
   description = "Allowed IP address for web app access"
   type        = string
+  default     = null
 }
 
 variable "application_insights_type" {

@@ -5,9 +5,25 @@
 # Data source for current Azure configuration
 data "azurerm_client_config" "current" {}
 
-# Data source for Azure AD application
-data "azuread_application" "web_app" {
+# Create Azure AD application instead of using data source
+resource "azuread_application" "web_app" {
   display_name = var.web_app_name
+  
+  web {
+    homepage_url  = "https://${var.web_app_name}.azurewebsites.net"
+    redirect_uris = ["https://${var.web_app_name}.azurewebsites.net/.auth/login/aad/callback"]
+  }
+
+  required_resource_access {
+    resource_app_id = "00000003-0000-0000-c000-000000000000" # Microsoft Graph
+
+    resource_access {
+      id   = "e1fe6dd8-ba31-4d61-89e7-88639da4683d" # User.Read
+      type = "Scope"
+    }
+  }
+
+  tags = ["terraform", "entra-management"]
 }
 
 # Generate a random password if client secret is not provided
@@ -62,7 +78,7 @@ module "webapp" {
   web_app_name              = var.web_app_name
   app_service_plan_name     = var.app_service_plan_name
   app_service_plan_sku      = var.app_service_plan_sku
-  web_app_client_id         = data.azuread_application.web_app.client_id
+  web_app_client_id         = azuread_application.web_app.client_id
   web_app_client_secret     = local.web_app_client_secret
   tenant_id                 = data.azurerm_client_config.current.tenant_id
   enable_ip_restrictions    = var.enable_ip_restrictions
@@ -86,7 +102,7 @@ resource "azurerm_key_vault" "main" {
   network_acls {
     default_action = "Deny"
     bypass         = "AzureServices"
-    ip_rules       = var.enable_ip_restrictions ? [var.allowed_ip_address] : []
+    ip_rules       = var.enable_ip_restrictions && var.allowed_ip_address != null ? [var.allowed_ip_address] : []
   }
 
   tags = local.tags_all
