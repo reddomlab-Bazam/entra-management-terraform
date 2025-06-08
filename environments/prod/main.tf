@@ -119,7 +119,8 @@ resource "azurerm_key_vault_access_policy" "current_user" {
     "List",
     "Set",
     "Delete",
-    "Purge"
+    "Purge",
+    "Recover"
   ]
 }
 
