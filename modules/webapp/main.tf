@@ -1,24 +1,6 @@
 # =============================================================================
-# WEBAPP MODULE - Azure Web App Configuration
+# WEBAPP MODULE - Azure Web App Configuration (FIXED)
 # =============================================================================
-
-# Storage Account for deployment package
-resource "azurerm_storage_account" "deployment" {
-  name                     = replace("${var.web_app_name}deploy", "-", "")
-  resource_group_name      = var.resource_group_name
-  location                 = var.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-  min_tls_version         = "TLS1_2"
-
-  tags = var.tags
-}
-
-resource "azurerm_storage_container" "deployment" {
-  name                  = "deployment"
-  storage_account_name  = azurerm_storage_account.deployment.name
-  container_access_type = "private"
-}
 
 # App Service Plan
 resource "azurerm_service_plan" "main" {
@@ -43,7 +25,8 @@ resource "azurerm_linux_web_app" "main" {
       node_version = "18-lts"
     }
 
-    always_on = true
+    # Only enable always_on for paid tiers
+    always_on = var.app_service_plan_sku != "F1" ? true : false
 
     # Only apply IP restrictions if enabled and IP address is provided
     dynamic "ip_restriction" {
@@ -58,8 +41,12 @@ resource "azurerm_linux_web_app" "main" {
   }
 
   app_settings = {
+    # Node.js configuration
     "WEBSITE_NODE_DEFAULT_VERSION" = "~18"
     "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
+    "WEBSITE_RUN_FROM_PACKAGE"    = "1"
+    
+    # Azure configuration
     "AZURE_CLIENT_ID"            = var.web_app_client_id
     "AZURE_CLIENT_SECRET"        = var.web_app_client_secret
     "AZURE_TENANT_ID"           = var.tenant_id
@@ -67,30 +54,43 @@ resource "azurerm_linux_web_app" "main" {
     "RESOURCE_GROUP_NAME"        = var.resource_group_name
     "AUTOMATION_ACCOUNT_NAME"    = var.automation_account_name
     "KEY_VAULT_URI"             = var.key_vault_uri
+    
+    # Application configuration
     "SESSION_TIMEOUT_MINUTES"    = "60"
     "NODE_ENV"                  = "production"
+    
+    # Application Insights
     "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.main.instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.main.connection_string
-    "WEBSITE_WEBSOCKET_ENABLED" = "1"
-    "WEBSITE_HTTPLOGGING_RETENTION_DAYS" = "7"
+    
+    # Debugging and logging
     "WEBSITE_HTTPLOGGING_ENABLED" = "1"
-    "WEBSITE_RUN_FROM_PACKAGE" = "1"
-    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
-    "WEBSITE_NODE_DEFAULT_VERSION" = "~18"
+    "WEBSITE_HTTPLOGGING_RETENTION_DAYS" = "7"
+    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
+    
+    # Performance settings
+    "WEBSITE_DYNAMIC_CACHE" = "0"
+    "WEBSITE_LOCAL_CACHE_OPTION" = "Default"
   }
 
-  auth_settings {
-    enabled = true
-    default_provider = "AzureActiveDirectory"
-    active_directory {
-      client_id = var.web_app_client_id
-      client_secret = var.web_app_client_secret
-      allowed_audiences = ["api://${var.web_app_name}"]
-    }
-  }
+  # Remove problematic auth_settings block - we'll handle auth in the app
+  # auth_settings_v2 can be configured later if needed
 
   identity {
     type = "SystemAssigned"
+  }
+
+  # Enable logging
+  logs {
+    detailed_error_messages = true
+    failed_request_tracing  = true
+    
+    http_logs {
+      file_system {
+        retention_in_days = 7
+        retention_in_mb   = 35
+      }
+    }
   }
 
   tags = var.tags
@@ -143,19 +143,3 @@ resource "null_resource" "deploy_app" {
     EOT
   }
 }
-
-# Example: Assign Microsoft Graph API permissions to the Azure AD application
-# (This block should be in your Azure AD application resource, but shown here for reference)
-# resource "azuread_application" "web_app" {
-#   required_resource_access {
-#     resource_app_id = "00000003-0000-0000-c000-000000000000" # Microsoft Graph
-#     resource_access {
-#       id   = "df021288-bdef-4463-88db-98f22de89214" # Directory.Read.All (Application)
-#       type = "Role"
-#     }
-#     resource_access {
-#       id   = "19dbc75e-c2e2-444c-a770-ec69d8559fc7" # User.Read.All (Application)
-#       type = "Role"
-#     }
-#   }
-# } 
